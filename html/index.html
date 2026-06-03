@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ay-eye Minigames</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div id="root" class="hidden">
+        <div id="stage">
+            <!-- Top status bar -->
+            <header id="hud">
+                <div id="hud-title">
+                    <span id="hud-tag"></span>
+                    <span id="hud-name"></span>
+                </div>
+                <div id="hud-timer">
+                    <div id="timer-bar"><div id="timer-fill"></div></div>
+                    <span id="timer-text">0.0</span>
+                </div>
+            </header>
+
+            <!-- Each game injects its own markup here -->
+            <main id="board"></main>
+
+            <!-- Progress dots for multi-round games -->
+            <footer id="footer">
+                <div id="dots"></div>
+                <div id="hint"></div>
+            </footer>
+        </div>
+
+        <!-- End-state flash overlay -->
+        <div id="flash" class="hidden"><span id="flash-text"></span></div>
+    </div>
+
+    <!-- engine first, then all games register themselves -->
+    <script src="engine.js"></script>
+    <script src="games/livewire.js"></script>
+    <script src="games/flatline.js"></script>
+    <script src="games/deadcalm.js"></script>
+    <script src="games/ghostsignal.js"></script>
+    <script src="games/steadydose.js"></script>
+    <script src="games/cuttheright.js"></script>
+    <script src="games/vaultspin.js"></script>
+    <script src="games/bluff.js"></script>
+    <script src="games/decrypt.js"></script>
+    <script src="games/gaslight.js"></script>
+    <script src="games/overflow.js"></script>
+    <script src="games/breachmatrix.js"></script>
+    <script src="games/daemonrun.js"></script>
+    <script src="games/pulse.js"></script>
+    <script src="games/hottrace.js"></script>
+    <script src="games/cascade.js"></script>
+    <script src="games/resonance.js"></script>
+    <script src="games/intrusion.js"></script>
+    <script src="games/override.js"></script>
+    <script src="games/animus.js"></script>
+    <script src="games/eaglevision.js"></script>
+    <script src="games/skillcheck.js"></script>
+    <script src="games/lockpick.js"></script>
+    <script src="games/keypad.js"></script>
+    <script src="games/quicktime.js"></script>
+    <script src="games/mash.js"></script>
+    <script src="games/reaction.js"></script>
+    <script src="games/stacker.js"></script>
+    <script src="games/targets.js"></script>
+    <script src="boot.js"></script>
+</body>
+</html>
