@@ -51,7 +51,14 @@ Config.Defaults = {
     mash         = { difficulty = 2 },
     reaction     = { difficulty = 2 },
     stacker      = { difficulty = 2 },
-    targets      = { difficulty = 2 }
+    targets      = { difficulty = 2 },
+
+    -- jobs (job-specific)
+    fishing      = { difficulty = 2 },
+    mining       = { difficulty = 2 },
+    cooking      = { difficulty = 2 },
+    welding      = { difficulty = 2 },
+    harvest      = { difficulty = 2 }
 }
 
 -- Freeze the player while a game is open.

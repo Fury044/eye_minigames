@@ -1,8 +1,8 @@
 fx_version 'cerulean'
 game 'gta5'
 
-author 'ay-eye'
-description 'Ay-eye Minigames — a standalone, framework-agnostic pack of 29 cinematic skill-check minigames with a clean export API'
+author 'Aria'
+description 'Ay-eye Minigames — a standalone, framework-agnostic pack of 34 cinematic skill-check minigames with a clean export API'
 version '1.0.0'
 
 lua54 'yes'
@@ -52,5 +52,10 @@ files {
     'html/games/reaction.js',
     'html/games/stacker.js',
     'html/games/targets.js',
+    'html/games/fishing.js',
+    'html/games/mining.js',
+    'html/games/cooking.js',
+    'html/games/welding.js',
+    'html/games/harvest.js',
     'html/boot.js'
 }

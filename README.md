@@ -1,12 +1,12 @@
 # Ay-eye Minigames
 
-A **standalone, framework-agnostic** pack of 29 cinematic skill-check minigames
+A **standalone, framework-agnostic** pack of 34 cinematic skill-check minigames
 for FiveM, with one clean export API. No ESX, QBCore, QBox, or ox_lib required.
 Drop it in, call it from any script, get a `true`/`false` back.
 
 ---
 
-## The games (29 total)
+## The games (34 total)
 
 ### Essentials (8 — the everyday workhorses, fit any script)
 
@@ -56,6 +56,16 @@ Drop it in, call it from any script, get a `true`/`false` back.
 | `override` | Override | lock spinning concentric rings at the top notch before corruption fills | Horizon Zero Dawn override | machine/drone takeover, control hacks |
 | `animus` | Animus | rotate concentric rings to align all key segments to one spoke | Assassin's Creed animus/glyph | ancient locks, sync points, relics |
 | `eaglevision` | Eagle Vision | memorize a target signature, then click every match among decoys | AC eagle vision / spider-sense | recon, target ID, surveillance |
+
+### Jobs (5 — job-specific)
+
+| id | name | mechanic | good for |
+|----|------|----------|----------|
+| `fishing` | Fishing | wait for the bite, then keep the fish in the zone while reeling | fishing job |
+| `mining` | Mining | strike the glowing crack before it fades, dodge misses | mining, quarry |
+| `cooking` | Cooking | multi-step timing — hit each stage in the green | cooking, crafting |
+| `welding` | Welding | drag the torch along a seam at steady speed without overheating | mechanic, repairs, fabrication |
+| `harvest` | Harvest | rhythm — cut each crop as it crosses the line | farming, weed/coca trim |
 
 ---
 

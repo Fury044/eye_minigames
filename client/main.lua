@@ -86,9 +86,10 @@ if Config.EnableTestCommands then
         essentials = { 'skillcheck', 'lockpick', 'keypad', 'quicktime', 'mash', 'reaction', 'stacker', 'targets' },
         core       = { 'livewire', 'flatline', 'deadcalm', 'ghostsignal', 'steadydose', 'cuttheright', 'vaultspin', 'bluff', 'decrypt', 'gaslight' },
         advanced   = { 'overflow', 'breachmatrix', 'daemonrun', 'pulse', 'hottrace', 'cascade' },
-        aaa        = { 'resonance', 'intrusion', 'override', 'animus', 'eaglevision' }
+        aaa        = { 'resonance', 'intrusion', 'override', 'animus', 'eaglevision' },
+        jobs       = { 'fishing', 'mining', 'cooking', 'welding', 'harvest' }
     }
-    local order = { 'essentials', 'core', 'advanced', 'aaa' }
+    local order = { 'essentials', 'core', 'advanced', 'aaa', 'jobs' }
 
     local function allIds()
         local t = {}
