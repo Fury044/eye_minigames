@@ -4,6 +4,7 @@ A **standalone, framework-agnostic** pack of 29 cinematic skill-check minigames
 for FiveM, with one clean export API. No ESX, QBCore, QBox, or ox_lib required.
 Drop it in, call it from any script, get a `true`/`false` back.
 
+# Preview https://eye-minigames.vercel.app/
 ---
 
 ## The games (29 total)
