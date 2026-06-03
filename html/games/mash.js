@@ -13,7 +13,7 @@ MG.register('mash', {
         const ctx = cvs.getContext('2d');
 
         let fill = 12, ended = false, pulse = 0;
-        function key(e) { if (e.code === 'Space') { e.preventDefault(); fill = Math.min(100, fill + perPress); pulse = 8; } }
+        function key(e) { if (e.code === 'Space') { e.preventDefault(); fill = Math.min(100, fill + perPress); pulse = 8; api.sfx('tick'); } }
         document.addEventListener('keydown', key);
 
         api.setTag('PUSH');

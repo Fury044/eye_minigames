@@ -33,16 +33,6 @@ html, body {
     display: grid; place-items: center;
 }
 
-/* Subtle vignette + scanline atmosphere */
-#root::before {
-    content: ''; position: fixed; inset: 0;
-    background:
-        radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%),
-        repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 3px);
-    pointer-events: none;
-    z-index: 0;
-}
-
 #stage {
     position: relative; z-index: 1;
     width: 560px;
@@ -128,11 +118,14 @@ html, body {
 #flash {
     position: fixed; inset: 0; z-index: 5;
     display: grid; place-items: center;
-    background: rgba(0,0,0,0.45);
+    pointer-events: none;
+    background: transparent;
 }
 #flash-text {
     font-family: var(--display); font-weight: 700;
     font-size: 48px; letter-spacing: 6px; text-transform: uppercase;
+    padding: 14px 36px; border-radius: 12px;
+    background: rgba(10, 14, 20, 0.82);
     animation: flash-pop 0.4s cubic-bezier(0.2,0.9,0.2,1) both;
 }
 #flash.win  #flash-text { color: var(--success); text-shadow: 0 0 30px var(--success); }

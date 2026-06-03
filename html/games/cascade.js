@@ -43,6 +43,7 @@ MG.register('cascade', {
                     return;
                 }
                 nodes[seq[i]].lit = 12; i++;
+                api.sfx('beep');
             }, flashMs);
         }
 

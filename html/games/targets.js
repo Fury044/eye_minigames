@@ -41,7 +41,7 @@ MG.register('targets', {
                 if (Math.hypot(t.x - p.x, t.y - p.y) < r + 4) {
                     t.dead = true;
                     if (t.decoy) { registerMiss(); }
-                    else { hits++; if (hits >= need) win(); }
+                    else { hits++; api.sfx('select'); if (hits >= need) win(); }
                     return;
                 }
             }

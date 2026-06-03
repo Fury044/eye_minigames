@@ -46,6 +46,8 @@ local function Start(game, opts, cb)
     if payload.allowCancel == nil then
         payload.allowCancel = Config.AllowCancelByDefault
     end
+    if payload.sound == nil then payload.sound = Config.Sound end
+    if payload.volume == nil then payload.volume = Config.Volume end
 
     isActive = true
     activeCb = cb

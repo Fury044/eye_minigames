@@ -28,6 +28,7 @@ MG.register('stacker', {
             if (overlap <= 4) { fail(); return; }
             stack.push({ x: left, w: overlap });
             placed++;
+            api.sfx('latch'); placed++;
             api.setDots(goal, Array.from({ length: goal }, (_, i) => i < placed ? 'done' : ''));
             if (placed >= goal) { win(); return; }
             cur = { x: 0, w: overlap, dir: 1 };

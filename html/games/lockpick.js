@@ -33,6 +33,7 @@ MG.register('lockpick', {
             if (ended) return;
             if (diffAng(pickAng, sweetspots[pin]) < tol) {
                 pin++;
+                api.sfx('latch');
                 api.setDots(pins, Array.from({ length: pins }, (_, i) => i < pin ? 'done' : ''));
                 if (pin >= pins) { ended = true; api.stopTimer(); setTimeout(() => api.succeed(), 250); }
             } else { api.shake(); /* light penalty: lose a sliver of time */ api.addTime(-1500); }

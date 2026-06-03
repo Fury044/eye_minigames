@@ -28,6 +28,7 @@ MG.register('skillcheck', {
             d = ((d % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
             if (d <= zoneSize) {
                 done++;
+                api.sfx('latch');
                 api.setDots(need, Array.from({ length: need }, (_, i) => i < done ? 'done' : ''));
                 if (done >= need) { ended = true; api.stopTimer(); cleanup(); setTimeout(() => api.succeed(), 250); }
                 else newZone();

@@ -15,6 +15,10 @@ Config.AllowCancelByDefault = true
 -- Set to false on a live/production server.
 Config.EnableTestCommands = true
 
+-- Sound effects (synthesized, no audio files). Per-call `sound`/`volume` override.
+Config.Sound = true        -- master on/off
+Config.Volume = 0.5        -- 0.0 - 1.0
+
 -- Default difficulty (1-5) and per-game options. Override per call.
 Config.Defaults = {
     livewire    = { difficulty = 2 },

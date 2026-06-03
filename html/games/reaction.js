@@ -33,6 +33,7 @@ MG.register('reaction', {
                     round++;
                     api.setDots(rounds, Array.from({ length: rounds }, (_, i) => i < round ? 'done' : ''));
                     if (round >= rounds) { win(); return; }
+                if (round >= rounds) { win(); return; } api.sfx('beep');
                     state = 'wait'; setTimeout(scheduleGreen, 500);
                 } else { fail('TOO SLOW ' + last + 'ms'); }
             }

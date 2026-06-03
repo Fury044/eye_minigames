@@ -25,7 +25,7 @@ MG.register('harvest', {
             crops.forEach((c) => {
                 if (!c.cut && !c.missed) { const d = Math.abs(c.y - cutY); if (d < bestD) { bestD = d; best = c; } }
             });
-            if (best && bestD < window_) { best.cut = true; cut++; judged++; }
+            if (best && bestD < window_) { best.cut = true; cut++; judged++; api.sfx('select'); }
             checkEnd();
         }
         function key(e) { if (e.code === 'Space') { e.preventDefault(); attempt(); } }

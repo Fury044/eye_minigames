@@ -49,6 +49,7 @@ MG.register('keypad', {
             if (k === '⌫') { guess.pop(); renderEntry(); return; }
             if (k === '✓') { submit(); return; }
             if (guess.length < len) { guess.push(k); renderEntry(); }
+            api.sfx('click');
         }
         function submit() {
             if (guess.length < len) { api.shake(); return; }

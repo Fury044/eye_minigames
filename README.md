@@ -4,7 +4,6 @@ A **standalone, framework-agnostic** pack of 34 cinematic skill-check minigames
 for FiveM, with one clean export API. No ESX, QBCore, QBox, or ox_lib required.
 Drop it in, call it from any script, get a `true`/`false` back.
 
-# [Preview](https://eye-minigames-cxqj0jo8z-ay-eyes-projects.vercel.app/) 
 ---
 
 ## The games (34 total)
@@ -173,6 +172,27 @@ flag off in `config.lua` for production.
 
 Results print to console and chat. The commands have chat autocomplete
 suggestions.
+
+---
+
+## Sound
+
+Synthesized sound effects (Web Audio — no audio files, zero extra deps).
+Clicks, ticks, success/fail stings, and per-game cues are built in.
+
+Global toggles in `config.lua`:
+
+```
+Config.Sound  = true    -- master on/off
+Config.Volume = 0.5     -- 0.0 - 1.0
+```
+
+Override per call:
+
+```
+exports.eye_minigames:Play('lockpick', { difficulty = 3, sound = false })
+exports.eye_minigames:Play('mining',   { difficulty = 2, volume = 0.8 })
+```
 
 ---
 

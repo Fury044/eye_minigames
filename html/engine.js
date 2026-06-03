@@ -75,6 +75,11 @@ const MG = (function () {
     function open(payload) {
         ended = false;
         applyTheme(payload.theme);
+        if (typeof SFX !== 'undefined') {
+            if (payload.sound === false) SFX.setEnabled(false);
+            else SFX.setEnabled(true);
+            if (typeof payload.volume === 'number') SFX.setVolume(payload.volume);
+        }
         const game = games[payload.game];
         $('root').classList.remove('hidden');
         $('flash').className = 'hidden';
@@ -97,7 +102,9 @@ const MG = (function () {
             succeed: () => end(true),
             fail:    () => end(false),
             shake:   () => { $('stage').classList.add('shake');
+                             if (typeof SFX !== 'undefined') SFX.play('bad');
                              setTimeout(() => $('stage').classList.remove('shake'), 320); },
+            sfx:     (name) => { if (typeof SFX !== 'undefined') SFX.play(name); },
             rand: (a, b) => a + Math.random() * (b - a),
             randInt: (a, b) => Math.floor(a + Math.random() * (b - a + 1))
         };
@@ -119,6 +126,7 @@ const MG = (function () {
         if (ended) return;
         ended = true;
         cleanup();
+        if (typeof SFX !== 'undefined') SFX.play(success ? 'success' : 'fail');
 
         const flash = $('flash');
         flash.className = success ? 'win' : 'lose';

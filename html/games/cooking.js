@@ -25,6 +25,7 @@ MG.register('cooking', {
             const inside = pos >= zoneX && pos <= zoneX + zoneW;
             if (inside) {
                 step++;
+                api.sfx('step');
                 api.setDots(steps, Array.from({ length: steps }, (_, i) => i < step ? 'done' : ''));
                 if (step >= steps) { finish(true); return; }
                 zoneX = newZone(); dir = Math.random() < 0.5 ? 1 : -1;

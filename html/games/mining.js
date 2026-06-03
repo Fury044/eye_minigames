@@ -33,6 +33,7 @@ MG.register('mining', {
             const p = rel(e);
             if (Math.hypot(p.x - crack.x, p.y - crack.y) < 28) {
                 hits++;
+                api.sfx('zap');
                 api.setDots(hitsNeeded, Array.from({ length: hitsNeeded }, (_, i) => i < hits ? 'done' : ''));
                 if (hits >= hitsNeeded) { finish(true); return; }
                 spawnCrack();
