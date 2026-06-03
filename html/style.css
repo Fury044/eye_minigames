@@ -45,7 +45,6 @@ html, body {
         0 0 60px -20px var(--accent);
     overflow: hidden;
     animation: panel-in 0.28s cubic-bezier(0.2, 0.9, 0.2, 1) both;
-    backdrop-filter: blur(6px);
 }
 
 @keyframes panel-in {
