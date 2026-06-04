@@ -14,8 +14,8 @@ MG.register('keypad', {
         box.innerHTML = `
             <div>
               <div class="label">ENTRY</div>
-              <div id="entry" style="display:flex;gap:8px;margin-bottom:10px;height:46px;align-items:center;"></div>
-              <div id="pad" style="display:grid;grid-template-columns:repeat(3,56px);gap:8px;"></div>
+              <div id="entry" style="display:flex;gap:8px;margin-bottom:12px;height:46px;align-items:center;width:184px;"></div>
+              <div id="pad" style="display:grid;grid-template-columns:repeat(3,56px);gap:8px;width:184px;"></div>
             </div>
             <div style="min-width:150px;">
               <div class="label">HISTORY (${attempts} tries)</div>
@@ -30,7 +30,7 @@ MG.register('keypad', {
             entryEl.innerHTML = '';
             for (let i = 0; i < len; i++) {
                 const d = document.createElement('div');
-                d.style.cssText = `width:34px;height:44px;border:1px solid var(--line);border-radius:6px;
+                d.style.cssText = `flex:1;height:46px;border:1px solid var(--line);border-radius:6px;
                     display:grid;place-items:center;font-size:22px;font-family:var(--mono);
                     color:var(--accent);${guess[i] !== undefined ? 'border-color:var(--accent);' : ''}`;
                 d.textContent = guess[i] !== undefined ? guess[i] : '·';

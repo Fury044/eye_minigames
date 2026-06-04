@@ -15,8 +15,8 @@ MG.register('flatline', {
         const ctx = cvs.getContext('2d');
 
         let done = 0, fails = 0, pos = 0, dir = 1;
-        const speed = 2.6 + diff * 0.9;
-        const zoneW = Math.max(36, 90 - diff * 11);
+        const speed = 1.7 + diff * 0.95;
+        const zoneW = Math.max(38, 120 - diff * 14);
         let zoneX = rnd();
         api.setDots(need);
 
@@ -50,7 +50,7 @@ MG.register('flatline', {
         document.addEventListener('keydown', key);
         function cleanupKeys() { document.removeEventListener('keydown', key); }
 
-        api.startTimer(Math.max(7, 16 - diff), () => { cleanupKeys(); api.fail(); });
+        api.startTimer(Math.max(8, 20 - diff * 1.6), () => { cleanupKeys(); api.fail(); });
 
         function ecg(x) {
             const baseline = H * 0.6;

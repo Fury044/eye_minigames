@@ -11,10 +11,10 @@ MG.register('harvest', {
         const ctx = cvs.getContext('2d');
 
         const total = 8 + diff * 2;
-        const speed = 2.2 + diff * 0.7;
+        const speed = 1.4 + diff * 0.7;
         const gap = Math.max(34, 64 - diff * 6);
         const needPct = 0.65 + diff * 0.04;
-        const window_ = Math.max(20, 34 - diff * 2);
+        const window_ = Math.max(22, 44 - diff * 3);
 
         let crops = [], spawned = 0, cut = 0, judged = 0, frame = 0, ended = false, flash = 0;
 

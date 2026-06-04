@@ -5,8 +5,8 @@ MG.register('targets', {
         const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
         const need = 6 + diff * 2;
         const maxMiss = Math.max(2, 5 - diff);
-        const life = Math.max(700, 1500 - diff * 160);
-        const spawnGap = Math.max(360, 800 - diff * 90);
+        const life = Math.max(750, 1900 - diff * 210);
+        const spawnGap = Math.max(380, 950 - diff * 110);
         const decoyChance = 0.12 + diff * 0.05;
         const W = 460, H = 300;
 

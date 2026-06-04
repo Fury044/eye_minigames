@@ -11,7 +11,7 @@ MG.register('mining', {
         const ctx = cvs.getContext('2d');
 
         const hitsNeeded = 4 + diff;
-        const crackTime = Math.max(550, 1200 - diff * 130);
+        const crackTime = Math.max(600, 1550 - diff * 170);
         let hits = 0, ended = false;
         let crack = null, crackBorn = 0, wrongStrikes = 0;
         const maxWrong = Math.max(2, 5 - diff);

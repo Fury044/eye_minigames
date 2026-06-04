@@ -20,7 +20,7 @@ MG.register('deadcalm', {
         let tvx = api.rand(-0.4, 0.4), tvy = api.rand(-0.4, 0.4);
 
         api.setDots(need);
-        api.startTimer(Math.max(9, 18 - diff), () => { unbind(); api.fail(); });
+        api.startTimer(Math.max(11, 24 - diff * 1.8), () => { unbind(); api.fail(); });
 
         function down(e) { if (e.code === 'Space') { e.preventDefault(); holding = true; } }
         function up(e)   { if (e.code === 'Space') { e.preventDefault(); holding = false; } }

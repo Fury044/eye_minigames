@@ -4,7 +4,7 @@ MG.register('reaction', {
     run(api) {
         const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
         const rounds = 3;
-        const threshold = Math.max(280, 650 - diff * 80);
+        const threshold = Math.max(280, 850 - diff * 95);
         const W = 360, H = 240;
 
         const cvs = document.createElement('canvas');

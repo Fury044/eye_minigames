@@ -4,7 +4,7 @@ MG.register('quicktime', {
     run(api) {
         const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
         const len = 4 + diff * 2;
-        const perKey = Math.max(0.7, 1.8 - diff * 0.22);
+        const perKey = Math.max(0.7, 2.3 - diff * 0.3);
         const KEYS = ['Q','W','E','R','A','S','D','F','Z','X','C','V'];
         const seq = Array.from({ length: len }, () => KEYS[api.randInt(0, KEYS.length - 1)]);
 

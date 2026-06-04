@@ -11,7 +11,7 @@ MG.register('fishing', {
 
         const reelGoal = 100;
         const zoneH = Math.max(50, 110 - diff * 12);
-        const fishSpeed = 1.2 + diff * 0.6;
+        const fishSpeed = 0.8 + diff * 0.6;
         const drain = 0.35 + diff * 0.12;
 
         let phase = 'wait', biteAt = 0, ended = false;

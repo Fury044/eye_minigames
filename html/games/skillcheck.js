@@ -11,8 +11,8 @@ MG.register('skillcheck', {
         api.board.appendChild(cvs);
         const ctx = cvs.getContext('2d');
 
-        const zoneSize = Math.max(0.18, 0.55 - diff * 0.07);
-        const speed = 0.035 + diff * 0.012;
+        const zoneSize = Math.max(0.18, 0.72 - diff * 0.10);
+        const speed = 0.022 + diff * 0.016;
         let ang = 0, dir = 1, done = 0, zoneStart = 0, ended = false;
 
         function newZone() {
@@ -39,7 +39,7 @@ MG.register('skillcheck', {
         cvs.addEventListener('click', attempt);
         function cleanup() { document.removeEventListener('keydown', key); }
 
-        api.startTimer(Math.max(6, 14 - diff), () => { cleanup(); api.fail(); });
+        api.startTimer(Math.max(7, 18 - diff * 1.6), () => { cleanup(); api.fail(); });
 
         function draw() {
             if (!ended) ang += speed * dir;

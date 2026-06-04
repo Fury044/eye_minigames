@@ -11,7 +11,7 @@ MG.register('stacker', {
         api.board.appendChild(cvs);
         const ctx = cvs.getContext('2d');
 
-        let speed = 2.2 + diff * 0.55;
+        let speed = 1.5 + diff * 0.6;
         let stack = [{ x: W / 2 - 70, w: 140 }];
         let cur = { x: 0, w: 140, dir: 1 };
         let placed = 1, ended = false;

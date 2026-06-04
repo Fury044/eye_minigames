@@ -13,8 +13,8 @@ MG.register('pulse', {
         const ctx = cvs.getContext('2d');
 
         const total = 12 + diff * 3;
-        const speed = 2.2 + diff * 0.7;
-        const spawnGap = Math.max(28, 60 - diff * 6);
+        const speed = 1.5 + diff * 0.7;
+        const spawnGap = Math.max(30, 78 - diff * 8);
         const needPct = 0.6 + diff * 0.05;
 
         let notes = [], spawned = 0, hits = 0, judged = 0, frame = 0, flash = {};

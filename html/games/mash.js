@@ -1,23 +1,33 @@
 MG.register('mash', {
     title: 'Mash',
-    hint: 'Spam SPACE to fill the bar',
+    hint: 'Tap SPACE / click rapidly to fill the bar',
     run(api) {
         const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
-        const drain = 0.25 + diff * 0.12;
-        const perPress = 3.2 - diff * 0.25;
+        const perPress = 7.5 - diff * 0.7;
+        const drainPerSec = 14 + diff * 7;
         const W = 360, H = 220;
 
         const cvs = document.createElement('canvas');
         cvs.width = W; cvs.height = H;
+        cvs.style.cursor = 'pointer';
         api.board.appendChild(cvs);
         const ctx = cvs.getContext('2d');
 
-        let fill = 12, ended = false, pulse = 0;
-        function key(e) { if (e.code === 'Space') { e.preventDefault(); fill = Math.min(100, fill + perPress); pulse = 8; api.sfx('tick'); } }
+        let fill = 12, ended = false, pulse = 0, lastT = performance.now();
+
+        function bump() {
+            if (ended) return;
+            fill = Math.min(100, fill + perPress);
+            pulse = 8;
+            api.sfx('tick');
+            if (fill >= 100) finish();
+        }
+        function key(e) { if (e.code === 'Space') { e.preventDefault(); bump(); } }
         document.addEventListener('keydown', key);
+        cvs.addEventListener('mousedown', bump);
 
         api.setTag('PUSH');
-        api.startTimer(Math.max(6, 12 - diff), () => finish());
+        api.startTimer(Math.max(7, 13 - diff), () => finish());
         function finish() {
             if (ended) return; ended = true;
             document.removeEventListener('keydown', key);
@@ -27,8 +37,11 @@ MG.register('mash', {
         }
 
         function draw() {
+            const now = performance.now();
+            const dt = Math.min(0.05, (now - lastT) / 1000);
+            lastT = now;
             if (!ended) {
-                fill = Math.max(0, fill - drain);
+                fill = Math.max(0, fill - drainPerSec * dt);
                 if (fill >= 100) { finish(); return; }
             }
             if (pulse > 0) pulse--;
@@ -47,7 +60,7 @@ MG.register('mash', {
             ctx.fillStyle = '#fff'; ctx.font = 'bold 26px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText(Math.round(fill) + '%', W / 2, by - 26);
             ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '13px monospace';
-            ctx.fillText('SPACE  SPACE  SPACE', W / 2, by + bh + 30);
+            ctx.fillText('TAP  TAP  TAP', W / 2, by + bh + 30);
             loop = requestAnimationFrame(draw);
         }
         let loop = requestAnimationFrame(draw);

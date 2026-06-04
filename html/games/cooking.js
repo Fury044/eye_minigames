@@ -11,8 +11,8 @@ MG.register('cooking', {
         const ctx = cvs.getContext('2d');
 
         const STEP_NAMES = ['CHOP', 'SEAR', 'SEASON', 'STIR', 'PLATE', 'GARNISH'];
-        const zoneW = Math.max(40, 100 - diff * 11);
-        const speed = 2.4 + diff * 0.8;
+        const zoneW = Math.max(44, 130 - diff * 14);
+        const speed = 1.6 + diff * 0.8;
 
         let step = 0, ended = false, pos = 60, dir = 1;
         let zoneX = newZone();
@@ -35,7 +35,7 @@ MG.register('cooking', {
         document.addEventListener('keydown', key);
         cvs.addEventListener('click', attempt);
 
-        api.startTimer(Math.max(10, 20 - diff), () => finish(false));
+        api.startTimer(Math.max(11, 24 - diff * 1.6), () => finish(false));
         function finish(ok) { if (ended) return; ended = true; if (!ok) api.shake(); document.removeEventListener('keydown', key); api.stopTimer(); setTimeout(() => ok ? api.succeed() : api.fail(), 200); }
 
         function draw() {
