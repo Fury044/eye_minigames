@@ -1,13 +1,5 @@
 Config = {}
 
--- Default theme. Per-call `theme` overrides any of these.
-Config.DefaultTheme = {
-    accent  = '#00e0b8',
-    danger  = '#ff3b5c',
-    success = '#39d98a',
-    bg      = '#0a0e14'
-}
-
 -- Allow ESC to cancel a game. Per-call `allowCancel` overrides this.
 Config.AllowCancelByDefault = true
 
@@ -62,7 +54,11 @@ Config.Defaults = {
     mining       = { difficulty = 2 },
     cooking      = { difficulty = 2 },
     welding      = { difficulty = 2 },
-    harvest      = { difficulty = 2 }
+    harvest      = { difficulty = 2 },
+    drilling     = { difficulty = 2 },
+    locksmith    = { difficulty = 2 },
+    hotwire      = { difficulty = 2 },
+    crafting     = { difficulty = 2 }
 }
 
 -- Freeze the player while a game is open.

@@ -14,10 +14,25 @@ MG.register('welding', {
         const speedTol = Math.max(1.0, 2.6 - diff * 0.32);
         const seamTol = Math.max(10, 24 - diff * 3);
 
+        // Randomized seam path — different shape every run so it can't be memorized.
+        // More nodes + bigger vertical swings at higher difficulty.
         const pts = [];
-        const segs = 5 + diff;
+        const segs = api.randInt(5 + diff, 7 + diff * 2);
+        const amp = 30 + diff * 8;
+        const midY = H / 2;
+        let y = midY + api.rand(-amp, amp);
         for (let i = 0; i <= segs; i++) {
-            pts.push({ x: 40 + (W - 80) * (i / segs), y: H / 2 + Math.sin(i * 0.8) * (40 + diff * 6) });
+            const x = 40 + (W - 80) * (i / segs);
+            if (i === 0) {
+                // start somewhere in the safe vertical band
+                y = midY + api.rand(-amp * 0.5, amp * 0.5);
+            } else {
+                // random walk with a pull back toward center so it stays on-canvas
+                const step = api.rand(-amp, amp) * (0.5 + diff * 0.12);
+                y += step + (midY - y) * 0.25;
+                y = Math.max(40, Math.min(H - 40, y));
+            }
+            pts.push({ x, y });
         }
         let progress = 0, heat = 0, lastX = null, ended = false;
         let holding = false;

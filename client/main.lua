@@ -1,23 +1,32 @@
 local isActive = false
 local activeCb = nil
+local activeNonce = nil
+
+-- Generate an unguessable per-session token. Used to reject forged NUI
+-- result callbacks (e.g. someone POSTing {success=true} from devtools).
+local nonceCounter = 0
+local function makeNonce()
+    nonceCounter = nonceCounter + 1
+    local parts = {
+        tostring(GetGameTimer()),
+        tostring(math.random(100000, 999999)),
+        tostring(math.random(100000, 999999)),
+        tostring(nonceCounter)
+    }
+    return table.concat(parts, '-')
+end
 
 local function merge(a, b)
     local out = {}
     for k, v in pairs(a or {}) do out[k] = v end
-    for k, v in pairs(b or {}) do
-        if k == 'theme' and type(v) == 'table' then
-            out.theme = out.theme or {}
-            for tk, tv in pairs(v) do out.theme[tk] = tv end
-        else
-            out[k] = v
-        end
-    end
+    for k, v in pairs(b or {}) do out[k] = v end
     return out
 end
 
 local function finish(success)
     if not isActive then return end
     isActive = false
+    activeNonce = nil
     SetNuiFocus(false, false)
     if Config.FreezePlayer then
         FreezeEntityPosition(PlayerPedId(), false)
@@ -42,7 +51,8 @@ local function Start(game, opts, cb)
 
     local payload = merge(defaults, opts)
     payload.game = game
-    payload.theme = merge(Config.DefaultTheme, (opts and opts.theme) or {})
+    payload.theme = nil
+
     if payload.allowCancel == nil then
         payload.allowCancel = Config.AllowCancelByDefault
     end
@@ -51,6 +61,8 @@ local function Start(game, opts, cb)
 
     isActive = true
     activeCb = cb
+    activeNonce = makeNonce()
+    payload.nonce = activeNonce
 
     if Config.FreezePlayer then
         FreezeEntityPosition(PlayerPedId(), true)
@@ -70,17 +82,59 @@ local function Play(game, opts)
     return result
 end
 
+-- Play games back-to-back. Returns: success, completed, total
+local function PlayChain(games, opts)
+    opts = opts or {}
+    local stopOnFail = opts.stopOnFail
+    if stopOnFail == nil then stopOnFail = true end
+    local total = #games
+    local completed = 0
+
+    for i = 1, total do
+        local stage = games[i]
+        local id, stageOpts
+        if type(stage) == 'table' then
+            id = stage.game or stage[1]
+            stageOpts = merge(opts, stage)
+            stageOpts.game = nil
+        else
+            id = stage
+            stageOpts = merge(opts, {})
+        end
+
+        local ok = Play(id, stageOpts)
+        if ok then
+            completed = completed + 1
+        elseif stopOnFail then
+            return false, completed, total
+        end
+        if i < total then Wait(opts.failDelay or 250) end
+    end
+
+    return completed == total, completed, total
+end
+
 exports('Start', Start)
 exports('Play', Play)
+exports('PlayChain', PlayChain)
 
 RegisterNUICallback('result', function(data, cb)
-    finish(data and data.success)
     cb('ok')
+    -- Reject results that don't carry the active session token. This blocks
+    -- forged callbacks (e.g. a POST sent from devtools) trying to fake a win.
+    if not isActive then return end
+    if not data or data.nonce ~= activeNonce then
+        print('[eye_minigames] rejected result with invalid/missing token')
+        return
+    end
+    finish(data.success)
 end)
 
-RegisterNUICallback('closed', function(_, cb)
-    finish(false)
+RegisterNUICallback('closed', function(data, cb)
     cb('ok')
+    if not isActive then return end
+    if not data or data.nonce ~= activeNonce then return end
+    finish(false)
 end)
 
 if Config.EnableTestCommands then
@@ -89,7 +143,7 @@ if Config.EnableTestCommands then
         core       = { 'livewire', 'flatline', 'deadcalm', 'ghostsignal', 'steadydose', 'cuttheright', 'vaultspin', 'bluff', 'decrypt', 'gaslight' },
         advanced   = { 'overflow', 'breachmatrix', 'daemonrun', 'pulse', 'hottrace', 'cascade' },
         aaa        = { 'resonance', 'intrusion', 'override', 'animus', 'eaglevision' },
-        jobs       = { 'fishing', 'mining', 'cooking', 'welding', 'harvest' }
+        jobs       = { 'fishing', 'mining', 'cooking', 'welding', 'harvest', 'drilling', 'locksmith', 'hotwire', 'crafting' }
     }
     local order = { 'essentials', 'core', 'advanced', 'aaa', 'jobs' }
 
@@ -113,7 +167,7 @@ if Config.EnableTestCommands then
         local id = args[1]
         local diff = tonumber(args[2]) or 2
         if not id then
-            notify('usage: /mg <id> [1-5]   |   /mglist for all ids')
+            notify('usage: /mg <id> [1-5]   |   /mglist for ids')
             return
         end
         if not Config.Defaults[string.lower(id)] then
@@ -131,6 +185,28 @@ if Config.EnableTestCommands then
         for _, cat in ipairs(order) do
             notify(('^5%s:^7 %s'):format(cat:upper(), table.concat(categories[cat], ', ')))
         end
+    end, false)
+
+    -- /mgchain <id1> <id2> ... [difficulty as last arg if number] -> play a sequence
+    RegisterCommand('mgchain', function(_, args)
+        if #args == 0 then
+            notify('usage: /mgchain <id1> <id2> <id3> ...  (e.g. /mgchain lockpick breachmatrix override)')
+            return
+        end
+        local diff = 2
+        local ids = {}
+        for _, a in ipairs(args) do
+            local n = tonumber(a)
+            if n then diff = n
+            elseif Config.Defaults[string.lower(a)] then ids[#ids + 1] = a
+            else notify('skipping unknown id "' .. a .. '"') end
+        end
+        if #ids == 0 then notify('no valid game ids given') return end
+        CreateThread(function()
+            notify(('chain start: %s (diff %d)'):format(table.concat(ids, ' -> '), diff))
+            local ok, done, total = PlayChain(ids, { difficulty = diff })
+            notify(('chain %s — %d/%d completed'):format(ok and '^2COMPLETE' or '^1FAILED', done, total))
+        end)
     end, false)
 
     -- /mgrandom [difficulty] -> play a random game

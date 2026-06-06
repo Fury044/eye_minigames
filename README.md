@@ -1,13 +1,13 @@
 # Ay-eye Minigames
 
-A **standalone, framework-agnostic** pack of 34 cinematic skill-check minigames
+A **standalone, framework-agnostic** pack of 38 cinematic skill-check minigames
 for FiveM, with one clean export API. No ESX, QBCore, QBox, or ox_lib required.
 Drop it in, call it from any script, get a `true`/`false` back.
 
 # [Preview](https://eye-minigames.vercel.app/) 
 ---
 
-## The games (34 total)
+## The games (38 total)
 
 ### Essentials (8 — the everyday workhorses, fit any script)
 
@@ -58,7 +58,7 @@ Drop it in, call it from any script, get a `true`/`false` back.
 | `animus` | Animus | rotate concentric rings to align all key segments to one spoke | Assassin's Creed animus/glyph | ancient locks, sync points, relics |
 | `eaglevision` | Eagle Vision | memorize a target signature, then click every match among decoys | AC eagle vision / spider-sense | recon, target ID, surveillance |
 
-### Jobs (5 — job-specific)
+### Jobs (9 — job-specific)
 
 | id | name | mechanic | good for |
 |----|------|----------|----------|
@@ -67,6 +67,10 @@ Drop it in, call it from any script, get a `true`/`false` back.
 | `cooking` | Cooking | multi-step timing — hit each stage in the green | cooking, crafting |
 | `welding` | Welding | drag the torch along a seam at steady speed without overheating | mechanic, repairs, fabrication |
 | `harvest` | Harvest | rhythm — cut each crop as it crosses the line | farming, weed/coca trim |
+| `drilling` | Drilling | hold to drill, keep pressure in the green without overheating | drilling, breaching, oil |
+| `locksmith` | Locksmith | raise each pin to its shear line and set it | doors, locks, repo |
+| `hotwire` | Hotwire | connect the wires, then time the ignition spark | car theft, boosting |
+| `crafting` | Crafting | memorize the recipe, then add ingredients in order | crafting, chemistry, cooking |
 
 ---
 
@@ -92,8 +96,7 @@ No database, no dependencies.
 CreateThread(function()
     local ok = exports.eye_minigames:Play('vaultspin', {
         difficulty = 3,                 -- 1 (easy) .. 5 (brutal)
-        tumblers   = 4,                 -- per-game option (see table below)
-        theme      = { accent = '#ff8a00' }
+        tumblers   = 4                  -- per-game option (see table below)
     })
 
     if ok then
@@ -117,6 +120,41 @@ end)
 
 ---
 
+## Chain mode (multi-game sequences)
+
+Run several minigames back-to-back — perfect for heists and multi-stage
+jobs. Blocking; returns `success, completed, total`.
+
+```lua
+CreateThread(function()
+    -- simple: list of ids, shared difficulty
+    local ok, done, total = exports.eye_minigames:PlayChain(
+        { 'lockpick', 'breachmatrix', 'override' },
+        { difficulty = 3 }
+    )
+    if ok then
+        print('full chain cleared!')
+    else
+        print(('failed at stage %d/%d'):format(done + 1, total))
+    end
+end)
+```
+
+Per-stage control (different game settings each step):
+
+```lua
+exports.eye_minigames:PlayChain({
+    { game = 'lockpick',     difficulty = 2 },
+    { game = 'breachmatrix', difficulty = 4 },
+    { game = 'override',     difficulty = 5, allowCancel = false }
+})
+```
+
+Chain options: `difficulty`, `allowCancel`, `stopOnFail`
+(default `true` — stop the moment a stage is failed).
+
+---
+
 ## Options
 
 Every call takes an options table. All fields optional.
@@ -124,8 +162,7 @@ Every call takes an options table. All fields optional.
 | field | type | default | notes |
 |-------|------|---------|-------|
 | `difficulty` | number 1–5 | per-game (config.lua) | scales speed/size/timer |
-| `theme` | table | global theme | `{ accent, danger, success, bg }` hex strings |
-| `allowCancel` | bool | `Config.AllowCancelByDefault` | ESC / Backspace to bail |
+| `allowCancel` | bool | `Config.AllowCancelByDefault` | ESC to bail |
 
 Per-game extras:
 
@@ -138,24 +175,7 @@ Per-game extras:
 | `bluff` | `hands` | 3 |
 
 All advanced games are driven purely by `difficulty` (1–5) — no extra
-options needed, though you can still pass `theme` and `allowCancel`.
-
----
-
-## Theming per call
-
-Match the minigame to the script that triggered it:
-
-```lua
--- red, no-cancel bomb defusal
-exports.eye_minigames:Play('cuttheright', {
-    difficulty = 4,
-    allowCancel = false,
-    theme = { accent = '#ff3b5c' }
-})
-```
-
-Global defaults live in `config.lua` → `Config.DefaultTheme`.
+options needed.
 
 ---
 

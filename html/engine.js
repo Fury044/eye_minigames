@@ -4,6 +4,7 @@ const MG = (function () {
     let raf = null;
     let timer = null;
     let ended = false;
+    let sessionNonce = null;   // per-game token from Lua; required to report a result
 
     const $ = (id) => document.getElementById(id);
 
@@ -19,16 +20,6 @@ const MG = (function () {
     function resName() {
         return (typeof GetParentResourceName === 'function')
             ? GetParentResourceName() : 'eye_minigames';
-    }
-
-    /* ---- Theme ---- */
-    function applyTheme(theme) {
-        const r = document.documentElement.style;
-        if (!theme) return;
-        if (theme.accent)  r.setProperty('--accent',  theme.accent);
-        if (theme.danger)  r.setProperty('--danger',  theme.danger);
-        if (theme.success) r.setProperty('--success', theme.success);
-        if (theme.bg)      r.setProperty('--bg',      theme.bg);
     }
 
     /* ---- Timer ---- */
@@ -74,7 +65,7 @@ const MG = (function () {
     /* ---- Lifecycle ---- */
     function open(payload) {
         ended = false;
-        applyTheme(payload.theme);
+        sessionNonce = payload.nonce || null;
         if (typeof SFX !== 'undefined') {
             if (payload.sound === false) SFX.setEnabled(false);
             else SFX.setEnabled(true);
@@ -136,7 +127,8 @@ const MG = (function () {
             $('root').classList.add('hidden');
             flash.className = 'hidden';
             $('board').innerHTML = '';
-            post('result', { success });
+            post('result', { success: success, nonce: sessionNonce });
+            sessionNonce = null;
         }, 850);
     }
 
