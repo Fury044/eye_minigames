@@ -1,13 +1,13 @@
 # Ay-eye Minigames
 
-A **standalone, framework-agnostic** pack of 38 cinematic skill-check minigames
+A **standalone, framework-agnostic** pack of 52 cinematic skill-check minigames
 for FiveM, with one clean export API. No ESX, QBCore, QBox, or ox_lib required.
 Drop it in, call it from any script, get a `true`/`false` back.
 
 # [Preview](https://eye-minigames.vercel.app/) 
 ---
 
-## The games (38 total)
+## The games (52 total)
 
 ### Essentials (8 — the everyday workhorses, fit any script)
 
@@ -58,7 +58,7 @@ Drop it in, call it from any script, get a `true`/`false` back.
 | `animus` | Animus | rotate concentric rings to align all key segments to one spoke | Assassin's Creed animus/glyph | ancient locks, sync points, relics |
 | `eaglevision` | Eagle Vision | memorize a target signature, then click every match among decoys | AC eagle vision / spider-sense | recon, target ID, surveillance |
 
-### Jobs (9 — job-specific)
+### Jobs (12 — job-specific)
 
 | id | name | mechanic | good for |
 |----|------|----------|----------|
@@ -71,6 +71,35 @@ Drop it in, call it from any script, get a `true`/`false` back.
 | `locksmith` | Locksmith | raise each pin to its shear line and set it | doors, locks, repo |
 | `hotwire` | Hotwire | connect the wires, then time the ignition spark | car theft, boosting |
 | `crafting` | Crafting | memorize the recipe, then add ingredients in order | crafting, chemistry, cooking |
+| `lugnuts` | Lug Nuts | torque each wheel nut in star order — stop the needle in the green | mechanic, tyre shop, repairs |
+| `paintspray` | Paint Booth | spray the panel to even coverage without over-soaking (drips) | bodyshop, resprays, detailing |
+| `crane` | Cargo Crane | lead the pendulum swing and drop crates onto the truck | docks, warehouse, loading |
+
+### Crime & Heist (3)
+
+| id | name | mechanic | good for |
+|----|------|----------|----------|
+| `tripwire` | Tripwire | thread through rotating laser beams to the green exit | infiltration, heists, security rooms |
+| `pickpocket` | Pickpocket | hold to lift, release before the mark glances at you | theft, lifting, stealth |
+| `getaway` | Getaway | swap lanes to dodge oncoming traffic and survive the run | chases, getaway driver, street racing |
+
+### Medical & Rescue (3)
+
+| id | name | mechanic | good for |
+|----|------|----------|----------|
+| `suture` | Suture | click each stitch as its ring shrinks into the green | EMS, surgery, field medic |
+| `bonepin` | Bone Set | drag fractured fragments into their matching slots | orthopedics, surgery, first aid |
+| `vitals` | Vitals | keep three drifting gauges in the green — tap 1 / 2 / 3 | EMS monitoring, ICU, anesthesia |
+
+### Heist (5)
+
+| id | name | mechanic | good for |
+|----|------|----------|----------|
+| `thermite` | Thermite | memorize the lit cells, then burn the same ones back | vault breaches, doors, fleeca/pacific |
+| `lasergrid` | Laser Grid | guide the cursor to the exit without touching a sweeping laser | infiltration, vaults, museums |
+| `vaultdrill` | Vault Drill | stop each drill point in the green core | safes, vaults, ATMs |
+| `jammer` | Signal Jammer | jam each alarm channel as its bar peaks | alarms, cameras, security |
+| `dataheist` | Data Heist | catch the clean data packets, dodge the corrupt red ones | hacking, data steals, USB grabs |
 
 ---
 

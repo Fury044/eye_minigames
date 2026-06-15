@@ -4441,6 +4441,619 @@
             }
         });
     </script>
+    <script>MG.register('tripwire', {
+    title: 'Tripwire',
+    hint: 'Move the mouse to weave past the sweeping lasers · reach the green exit',
+    run(api) {
+        const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
+        const W = 460, H = 300;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        cvs.style.cursor = 'crosshair';
+        api.board.appendChild(cvs);
+        const ctx = cvs.getContext('2d');
+
+        const css = getComputedStyle(document.documentElement);
+        const acc = (css.getPropertyValue('--accent') || '#00e0b8').trim();
+        const suc = (css.getPropertyValue('--success') || '#39d98a').trim();
+        const dng = (css.getPropertyValue('--danger') || '#ff3b5c').trim();
+
+        // Oscillating "wiper" lasers: each pivots from the top or bottom edge and
+        // sweeps a bounded fan into the room. Separated x columns + out of phase,
+        // so a clear gap to weave through always exists.
+        const count = 2 + Math.floor((diff - 1) / 2); // 2,2,3,3,4
+        const L = H * 0.64;
+        const sweep = 0.5 + diff * 0.06;
+        const beams = [];
+        for (let i = 0; i < count; i++) {
+            const top = i % 2 === 0;
+            beams.push({
+                x: 120 + (i + 0.5) * (W - 190) / count,
+                y: top ? 10 : H - 10,
+                base: top ? Math.PI / 2 : -Math.PI / 2,
+                phase: api.rand(0, Math.PI * 2),
+                spd: (0.015 + diff * 0.003) * (Math.random() < 0.5 ? 1 : -1),
+                ang: 0
+            });
+        }
+
+        const start = { x: 26, y: H / 2 };
+        const av = { x: start.x, y: start.y, r: 8 };
+        let mx = start.x, my = start.y, has = false, done = false, cool = 0;
+
+        cvs.addEventListener('mousemove', (e) => { const b = cvs.getBoundingClientRect(); mx = (e.clientX - b.left) * (W / b.width); my = (e.clientY - b.top) * (H / b.height); has = true; });
+
+        api.setTag('INFILTRATING');
+        api.startTimer(Math.max(18, 30 - diff * 2), () => fail());
+        function fail() { if (done) return; done = true; api.stopTimer(); setTimeout(() => api.fail(), 200); }
+        function win() { if (done) return; done = true; api.stopTimer(); api.setTag('CLEAR'); setTimeout(() => api.succeed(), 300); }
+
+        function segDist(px, py, ax, ay, bx, by) {
+            const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+            let t = l2 ? ((px - ax) * dx + (py - ay) * dy) / l2 : 0;
+            t = Math.max(0, Math.min(1, t));
+            return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+        }
+
+        function draw() {
+            if (has) { av.x += (mx - av.x) * 0.4; av.y += (my - av.y) * 0.4; }
+            av.x = Math.max(av.r, Math.min(W - av.r, av.x));
+            av.y = Math.max(av.r, Math.min(H - av.r, av.y));
+            ctx.clearRect(0, 0, W, H);
+            const exX = W - 34;
+            ctx.fillStyle = 'rgba(57,217,138,0.12)'; ctx.fillRect(exX, 0, W - exX, H);
+            ctx.strokeStyle = suc; ctx.lineWidth = 2; ctx.strokeRect(exX, 0, W - exX, H);
+            ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(0, 0, 42, H);
+            let tripped = false;
+            beams.forEach(bm => {
+                if (!done) bm.phase += bm.spd;
+                bm.ang = bm.base + Math.sin(bm.phase) * sweep;
+                const tx = bm.x + Math.cos(bm.ang) * L, ty = bm.y + Math.sin(bm.ang) * L;
+                const d = segDist(av.x, av.y, bm.x, bm.y, tx, ty), near = d < 22;
+                ctx.strokeStyle = near ? dng : 'rgba(255,59,92,0.5)';
+                ctx.lineWidth = 2; ctx.shadowColor = dng; ctx.shadowBlur = near ? 14 : 6;
+                ctx.beginPath(); ctx.moveTo(bm.x, bm.y); ctx.lineTo(tx, ty); ctx.stroke(); ctx.shadowBlur = 0;
+                ctx.fillStyle = dng; ctx.beginPath(); ctx.arc(bm.x, bm.y, 5, 0, Math.PI * 2); ctx.fill();
+                if (d < av.r + 2) tripped = true;
+            });
+            ctx.fillStyle = tripped ? dng : acc; ctx.shadowColor = tripped ? dng : acc; ctx.shadowBlur = 14;
+            ctx.beginPath(); ctx.arc(av.x, av.y, av.r, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+            if (cool > 0) cool--;
+            if (tripped && cool === 0 && !done) { cool = 40; api.shake(); api.sfx('zap'); api.addTime(-1200); }
+            if (av.x > exX && !done) { win(); return; }
+            if (!done) loop = requestAnimationFrame(draw);
+        }
+        let loop = requestAnimationFrame(draw);
+        return { destroy() { cancelAnimationFrame(loop); } };
+    }
+});
+    </script>
+    <script>MG.register('pickpocket', {
+    title: 'Pickpocket',
+    hint: 'Hold SPACE / mouse to lift · release before they glance',
+    run(api) {
+        const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
+        const W = 360, H = 280;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        cvs.style.cursor = 'pointer';
+        api.board.appendChild(cvs);
+        const ctx = cvs.getContext('2d');
+
+        const css = getComputedStyle(document.documentElement);
+        const acc = (css.getPropertyValue('--accent') || '#00e0b8').trim();
+        const suc = (css.getPropertyValue('--success') || '#39d98a').trim();
+        const dng = (css.getPropertyValue('--danger') || '#ff3b5c').trim();
+
+        let progress = 0, suspicion = 0, holding = false, done = false;
+        let glanceT = api.rand(1.4, 2.6), glancing = false, glanceLeft = 0, warn = 0;
+        const riseP = 0.16 + diff * 0.02, riseS = 0.30 + diff * 0.06, fallS = 0.45 + diff * 0.05;
+        let last = performance.now();
+
+        function down(e) { if (e.code === 'Space') { e.preventDefault(); holding = true; } }
+        function up(e) { if (e.code === 'Space') { e.preventDefault(); holding = false; } }
+        document.addEventListener('keydown', down);
+        document.addEventListener('keyup', up);
+        cvs.addEventListener('mousedown', () => holding = true);
+        cvs.addEventListener('mouseup', () => holding = false);
+        cvs.addEventListener('mouseleave', () => holding = false);
+
+        api.setTag('STEADY');
+        api.startTimer(Math.max(16, 26 - diff * 2), () => fail('TIME'));
+        function clean() { document.removeEventListener('keydown', down); document.removeEventListener('keyup', up); }
+        function fail(m) { if (done) return; done = true; api.setTag(m || 'CAUGHT'); api.shake(); clean(); api.stopTimer(); setTimeout(() => api.fail(), 250); }
+        function win() { if (done) return; done = true; clean(); api.stopTimer(); api.setTag('LIFTED'); setTimeout(() => api.succeed(), 250); }
+
+        function bar(x, y, w, h, v, col, label) {
+            ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(x, y, w, h);
+            ctx.fillStyle = col; ctx.fillRect(x, y, w * Math.min(1, v), h);
+            ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '9px monospace'; ctx.textAlign = 'left'; ctx.fillText(label, x, y - 3);
+        }
+
+        function draw() {
+            const now = performance.now(); const dt = Math.min(0.05, (now - last) / 1000); last = now;
+            if (!done) {
+                if (!glancing) {
+                    glanceT -= dt; warn = glanceT < 0.55 ? (0.55 - glanceT) / 0.55 : 0;
+                    if (glanceT <= 0) { glancing = true; glanceLeft = api.rand(0.7, 1.1); }
+                } else {
+                    glanceLeft -= dt; warn = 1;
+                    if (holding) { fail('SPOTTED'); return; }
+                    if (glanceLeft <= 0) { glancing = false; glanceT = Math.max(0.9, api.rand(1.3, 2.6) - diff * 0.12); warn = 0; }
+                }
+                if (holding) { progress = Math.min(1, progress + riseP * dt); suspicion = Math.min(1, suspicion + riseS * dt); }
+                else suspicion = Math.max(0, suspicion - fallS * dt);
+                if (suspicion >= 1) { fail('TOO BOLD'); return; }
+                if (progress >= 1) { win(); return; }
+            }
+            ctx.clearRect(0, 0, W, H);
+            const cx = W / 2, hy = 92;
+            ctx.fillStyle = 'rgba(255,255,255,0.08)';
+            ctx.beginPath(); ctx.arc(cx, hy, 38, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(cx - 58, H - 6); ctx.lineTo(cx - 34, hy + 28); ctx.lineTo(cx + 34, hy + 28); ctx.lineTo(cx + 58, H - 6); ctx.closePath(); ctx.fill();
+            const open = 2 + warn * 12;
+            ctx.fillStyle = warn > 0.5 ? dng : 'rgba(255,255,255,0.4)';
+            ctx.beginPath(); ctx.ellipse(cx, hy - 4, 13, open, 0, 0, Math.PI * 2); ctx.fill();
+            if (warn > 0.5) { ctx.fillStyle = '#0a0e14'; ctx.beginPath(); ctx.arc(cx, hy - 4, 4, 0, Math.PI * 2); ctx.fill(); }
+            ctx.fillStyle = holding ? acc : 'rgba(255,255,255,0.3)';
+            ctx.shadowColor = holding ? acc : 'transparent'; ctx.shadowBlur = holding ? 10 : 0;
+            ctx.beginPath(); ctx.arc(cx + 44, hy + 52, holding ? 9 : 6, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+            bar(40, H - 30, W - 80, 10, progress, acc, 'LIFT ' + Math.round(progress * 100) + '%');
+            bar(40, H - 14, W - 80, 8, suspicion, suspicion > 0.7 ? dng : 'rgba(255,150,0,0.85)', 'HEAT');
+            if (!done) loop = requestAnimationFrame(draw);
+        }
+        let loop = requestAnimationFrame(draw);
+        return { destroy() { cancelAnimationFrame(loop); clean(); } };
+    }
+});
+    </script>
+    <script>MG.register('getaway', {
+    title: 'Getaway',
+    hint: 'A / D (or ← →) to switch lanes · dodge traffic until you’re clear',
+    run(api) {
+        const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
+        const lanes = 3, W = 300, H = 330;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        api.board.appendChild(cvs);
+        const ctx = cvs.getContext('2d');
+
+        const css = getComputedStyle(document.documentElement);
+        const acc = (css.getPropertyValue('--accent') || '#00e0b8').trim();
+        const suc = (css.getPropertyValue('--success') || '#39d98a').trim();
+        const dng = (css.getPropertyValue('--danger') || '#ff3b5c').trim();
+
+        const laneX = (i) => (W / lanes) * (i + 0.5);
+        let targetLane = 1, carX = laneX(1);
+        const carW = 36, carH = 58, carY = H - 70;
+        let done = false, dash = 0, spawnT = 0;
+        const speed = 3 + diff * 0.7;
+        const spawnEvery = Math.max(22, 60 - diff * 7);
+        const traffic = [];
+
+        function key(e) {
+            if (done) return;
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') { targetLane = Math.max(0, targetLane - 1); api.sfx('tick'); }
+            else if (e.code === 'ArrowRight' || e.code === 'KeyD') { targetLane = Math.min(lanes - 1, targetLane + 1); api.sfx('tick'); }
+        }
+        document.addEventListener('keydown', key);
+
+        api.setTag('FLOOR IT');
+        api.startTimer(Math.max(11, 17 - diff), () => win());
+        function fail() { if (done) return; done = true; document.removeEventListener('keydown', key); api.stopTimer(); api.shake(); api.sfx('bad'); setTimeout(() => api.fail(), 250); }
+        function win() { if (done) return; done = true; document.removeEventListener('keydown', key); api.stopTimer(); api.setTag('CLEAR'); setTimeout(() => api.succeed(), 250); }
+        function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+        function draw() {
+            if (!done) {
+                carX += (laneX(targetLane) - carX) * 0.22;
+                dash = (dash + speed) % 44;
+                if (++spawnT >= spawnEvery) {
+                    spawnT = 0;
+                    const l = api.randInt(0, lanes - 1);
+                    traffic.push({ x: laneX(l), y: -carH });
+                    if (diff >= 3 && Math.random() < 0.45) { const l2 = (l + 1 + api.randInt(0, lanes - 2)) % lanes; traffic.push({ x: laneX(l2), y: -carH - api.rand(40, 110) }); }
+                }
+            }
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = 'rgba(255,255,255,0.03)'; ctx.fillRect(0, 0, W, H);
+            ctx.strokeStyle = 'rgba(255,255,255,0.14)'; ctx.lineWidth = 3;
+            for (let i = 1; i < lanes; i++) { const x = (W / lanes) * i; for (let y = -44 + dash; y < H; y += 44) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + 22); ctx.stroke(); } }
+            let crash = false;
+            for (const t of traffic) {
+                if (!done) t.y += speed;
+                ctx.fillStyle = dng; rr(t.x - carW / 2, t.y, carW, carH, 7); ctx.fill();
+                ctx.fillStyle = 'rgba(0,0,0,0.35)'; rr(t.x - carW / 2 + 5, t.y + 9, carW - 10, 15, 3); ctx.fill();
+                if (Math.abs(t.x - carX) < carW * 0.78 && t.y + carH > carY + 8 && t.y < carY + carH - 8) crash = true;
+            }
+            for (let i = traffic.length - 1; i >= 0; i--) if (traffic[i].y > H + 30) traffic.splice(i, 1);
+            ctx.fillStyle = acc; ctx.shadowColor = acc; ctx.shadowBlur = 14; rr(carX - carW / 2, carY, carW, carH, 7); ctx.fill(); ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(0,0,0,0.35)'; rr(carX - carW / 2 + 5, carY + 9, carW - 10, 15, 3); ctx.fill();
+            if (crash && !done) { fail(); return; }
+            if (!done) loop = requestAnimationFrame(draw);
+        }
+        let loop = requestAnimationFrame(draw);
+        return { destroy() { cancelAnimationFrame(loop); document.removeEventListener('keydown', key); } };
+    }
+});
+    </script>
+    <script>MG.register('lugnuts', {
+    title: 'Lug Nuts',
+    hint: 'SPACE / click when the torque needle hits the green band',
+    run(api) {
+        const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
+        const W = 300, H = 300, cx = W / 2, cy = H / 2 - 10;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        cvs.style.cursor = 'pointer';
+        api.board.appendChild(cvs);
+        const ctx = cvs.getContext('2d');
+
+        const css = getComputedStyle(document.documentElement);
+        const acc = (css.getPropertyValue('--accent') || '#00e0b8').trim();
+        const suc = (css.getPropertyValue('--success') || '#39d98a').trim();
+
+        const N = 5, order = [0, 2, 4, 1, 3], nuts = [];
+        for (let i = 0; i < N; i++) { const a = -Math.PI / 2 + i * (Math.PI * 2 / N); nuts.push({ x: cx + Math.cos(a) * 78, y: cy + Math.sin(a) * 78, set: false }); }
+        let step = 0, t = 0, done = false;
+        const band = Math.max(0.12, 0.28 - diff * 0.03), lo = 0.6, hi = lo + band, spd = 0.012 + diff * 0.004;
+
+        api.setDots(N);
+        function update() { api.setDots(N, order.map((oi, k) => nuts[order[k]].set ? 'done' : (k === step ? 'active' : ''))); }
+        update();
+        function attempt() {
+            if (done) return;
+            const ni = order[step];
+            if (t >= lo && t <= hi) {
+                nuts[ni].set = true; api.sfx('latch'); step++; t = 0; update();
+                if (step >= N) { done = true; api.stopTimer(); api.setTag('TORQUED'); setTimeout(() => api.succeed(), 300); }
+            } else { api.shake(); api.addTime(-1500); t = 0; }
+        }
+        function key(e) { if (e.code === 'Space') { e.preventDefault(); attempt(); } }
+        document.addEventListener('keydown', key);
+        cvs.addEventListener('click', attempt);
+        api.setTag('TORQUING');
+        api.startTimer(Math.max(14, 26 - diff * 2), () => { if (!done) { done = true; api.stopTimer(); document.removeEventListener('keydown', key); setTimeout(() => api.fail(), 200); } });
+
+        function hexNut(x, y, r, col, glow) {
+            ctx.save(); ctx.translate(x, y); ctx.rotate(Math.PI / 6); ctx.beginPath();
+            for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; const px = Math.cos(a) * r, py = Math.sin(a) * r; k ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+            ctx.closePath(); ctx.fillStyle = col; ctx.shadowColor = glow ? col : 'transparent'; ctx.shadowBlur = glow ? 10 : 0; ctx.fill(); ctx.restore(); ctx.shadowBlur = 0;
+        }
+        function draw() {
+            if (!done) { t += spd; if (t > 1) t = 0; }
+            ctx.clearRect(0, 0, W, H);
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 16; ctx.beginPath(); ctx.arc(cx, cy, 78, 0, Math.PI * 2); ctx.stroke();
+            ctx.fillStyle = 'rgba(255,255,255,0.04)'; ctx.beginPath(); ctx.arc(cx, cy, 58, 0, Math.PI * 2); ctx.fill();
+            const activeNut = done ? -1 : order[step];
+            nuts.forEach((n, i) => hexNut(n.x, n.y, 13, n.set ? suc : (i === activeNut ? acc : 'rgba(255,255,255,0.2)'), n.set || i === activeNut));
+            const gx = 40, gy = H - 24, gw = W - 80, gh = 12;
+            ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(gx, gy, gw, gh);
+            ctx.fillStyle = 'rgba(57,217,138,0.3)'; ctx.fillRect(gx + gw * lo, gy, gw * (hi - lo), gh);
+            const inB = t >= lo && t <= hi;
+            ctx.fillStyle = inB ? suc : acc; ctx.fillRect(gx + gw * t - 2, gy - 3, 4, gh + 6);
+            ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+            ctx.fillText('TORQUE  ·  nut ' + Math.min(step + 1, N) + '/' + N, cx, gy - 6);
+            if (!done) loop = requestAnimationFrame(draw);
+        }
+        let loop = requestAnimationFrame(draw);
+        return { destroy() { cancelAnimationFrame(loop); document.removeEventListener('keydown', key); } };
+    }
+});
+    </script>
+    <script>MG.register('paintspray', {
+    title: 'Paint Booth',
+    hint: 'Hold mouse to spray · cover the panel evenly · don’t over-soak',
+    run(api) {
+        const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
+        const W = 420, H = 300;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        cvs.style.cursor = 'crosshair';
+        api.board.appendChild(cvs);
+        const ctx = cvs.getContext('2d');
+
+        const css = getComputedStyle(document.documentElement);
+        const acc = (css.getPropertyValue('--accent') || '#00e0b8').trim();
+        const suc = (css.getPropertyValue('--success') || '#39d98a').trim();
+        const dng = (css.getPropertyValue('--danger') || '#ff3b5c').trim();
+        const accRGB = (() => { const h = acc.replace('#', ''); return [parseInt(h.substr(0, 2), 16), parseInt(h.substr(2, 2), 16), parseInt(h.substr(4, 2), 16)]; })();
+
+        const cols = 14, rows = 10, px = 40, py = 22, pw = W - 80, ph = H - 78, cw = pw / cols, ch = ph / rows;
+        const cells = new Float32Array(cols * rows);
+        let spraying = false, mx = 0, my = 0, has = false, drips = 0, done = false;
+        const need = Math.floor(cols * rows * 0.88);
+        const dripLimit = Math.max(6, 16 - diff * 2), brush = 2.0, flow = 0.05 + diff * 0.006;
+
+        cvs.addEventListener('mousemove', (e) => { const b = cvs.getBoundingClientRect(); mx = (e.clientX - b.left) * (W / b.width); my = (e.clientY - b.top) * (H / b.height); has = true; });
+        cvs.addEventListener('mousedown', () => spraying = true);
+        cvs.addEventListener('mouseup', () => spraying = false);
+        cvs.addEventListener('mouseleave', () => spraying = false);
+
+        api.setTag('PRIMING');
+        api.startTimer(Math.max(18, 30 - diff * 2), () => fail('TIME'));
+        function fail(m) { if (done) return; done = true; api.setTag(m || 'FAIL'); api.shake(); api.stopTimer(); setTimeout(() => api.fail(), 250); }
+        function win() { if (done) return; done = true; api.setTag('GLOSS'); api.stopTimer(); setTimeout(() => api.succeed(), 300); }
+        function bar(x, y, w, h, v, col, label) {
+            ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(x, y, w, h);
+            ctx.fillStyle = col; ctx.fillRect(x, y, w * Math.min(1, v), h);
+            ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.font = '9px monospace'; ctx.textAlign = 'left'; ctx.fillText(label, x, y - 3);
+        }
+        function draw() {
+            if (!done && spraying && has) {
+                const ccx = (mx - px) / cw, ccy = (my - py) / ch;
+                for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+                    const d = Math.hypot(c + 0.5 - ccx, r + 0.5 - ccy);
+                    if (d < brush) { const idx = r * cols + c, before = cells[idx]; cells[idx] += flow * (1 - d / brush); if (cells[idx] > 1.25 && before <= 1.25) drips++; }
+                }
+            }
+            ctx.clearRect(0, 0, W, H);
+            ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 2; ctx.strokeRect(px - 4, py - 4, pw + 8, ph + 8);
+            let covered = 0;
+            for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+                const v = cells[r * cols + c];
+                if (v >= 0.6) covered++;
+                if (v > 1.25) ctx.fillStyle = dng;
+                else if (v >= 0.6) ctx.fillStyle = `rgba(${accRGB[0]},${accRGB[1]},${accRGB[2]},${0.25 + Math.min(1, v) * 0.6})`;
+                else ctx.fillStyle = `rgba(255,255,255,${0.03 + v * 0.2})`;
+                ctx.fillRect(px + c * cw + 0.5, py + r * ch + 0.5, cw - 1, ch - 1);
+            }
+            if (has) { ctx.strokeStyle = spraying ? acc : 'rgba(255,255,255,0.4)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(mx, my, brush * cw, 0, Math.PI * 2); ctx.stroke(); }
+            const covPct = covered / (cols * rows);
+            bar(px, H - 34, pw, 8, covPct, suc, 'COVERAGE ' + Math.round(covPct * 100) + '%');
+            bar(px, H - 18, pw, 6, drips / dripLimit, dng, 'DRIPS ' + drips + '/' + dripLimit);
+            if (!done) {
+                if (drips >= dripLimit) { fail('TOO MANY DRIPS'); return; }
+                if (covered >= need) { win(); return; }
+                loop = requestAnimationFrame(draw);
+            }
+        }
+        let loop = requestAnimationFrame(draw);
+        return { destroy() { cancelAnimationFrame(loop); } };
+    }
+});
+    </script>
+    <script>MG.register('crane', {
+    title: 'Cargo Crane',
+    hint: 'SPACE / click to drop · lead the swing onto the truck',
+    run(api) {
+        const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
+        const W = 420, H = 300;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        cvs.style.cursor = 'pointer';
+        api.board.appendChild(cvs);
+        const ctx = cvs.getContext('2d');
+
+        const css = getComputedStyle(document.documentElement);
+        const acc = (css.getPropertyValue('--accent') || '#00e0b8').trim();
+        const suc = (css.getPropertyValue('--success') || '#39d98a').trim();
+
+        const pivot = { x: W / 2, y: 26 };
+        const L = 150, maxA = 0.9, g = 0.5, floorY = H - 30, swSpd = 0.03 + diff * 0.006;
+        const tgW = Math.max(46, 92 - diff * 9), rounds = 3;
+        let phase = api.rand(0, Math.PI * 2), prevX = 0, round = 0, done = false;
+        let target = newTarget(), crate = null;
+
+        api.setDots(rounds);
+        function newTarget() { return 60 + Math.random() * (W - 120); }
+        function hookPos() { const a = Math.sin(phase) * maxA; return { x: pivot.x + Math.sin(a) * L, y: pivot.y + Math.cos(a) * L }; }
+        prevX = hookPos().x;
+        function drop() { if (done || crate) return; const h = hookPos(); crate = { x: h.x, y: h.y, vx: (h.x - prevX), vy: 0 }; api.sfx('whoosh'); }
+        function key(e) { if (e.code === 'Space') { e.preventDefault(); drop(); } }
+        document.addEventListener('keydown', key);
+        cvs.addEventListener('click', drop);
+        api.setTag('HOIST');
+        api.startTimer(Math.max(20, 34 - diff * 2), () => fail());
+        function fail() { if (done) return; done = true; document.removeEventListener('keydown', key); api.stopTimer(); api.shake(); setTimeout(() => api.fail(), 200); }
+        function win() { if (done) return; done = true; document.removeEventListener('keydown', key); api.stopTimer(); api.setTag('LOADED'); setTimeout(() => api.succeed(), 300); }
+        function dotState() { return Array.from({ length: rounds }, (_, i) => i < round ? 'done' : ''); }
+        function draw() {
+            if (!done) { prevX = hookPos().x; phase += swSpd; }
+            const h = hookPos();
+            if (crate) {
+                crate.vy += g; crate.x += crate.vx; crate.y += crate.vy;
+                if (crate.y >= floorY - 10) {
+                    if (Math.abs(crate.x - target) < tgW / 2) {
+                        round++; api.setDots(rounds, dotState()); api.sfx('good');
+                        if (round >= rounds) { win(); return; }
+                        crate = null; target = newTarget();
+                    } else { fail(); return; }
+                }
+            }
+            ctx.clearRect(0, 0, W, H);
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(20, pivot.y); ctx.lineTo(W - 20, pivot.y); ctx.stroke();
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(pivot.x, pivot.y); ctx.lineTo(h.x, h.y); ctx.stroke();
+            if (!crate) { ctx.fillStyle = acc; ctx.shadowColor = acc; ctx.shadowBlur = 10; ctx.fillRect(h.x - 14, h.y - 12, 28, 24); ctx.shadowBlur = 0; }
+            ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(0, floorY, W, H - floorY);
+            ctx.fillStyle = 'rgba(57,217,138,0.18)'; ctx.fillRect(target - tgW / 2, floorY - 8, tgW, 8);
+            ctx.strokeStyle = suc; ctx.lineWidth = 2; ctx.strokeRect(target - tgW / 2, floorY - 8, tgW, 8);
+            if (crate) { ctx.fillStyle = acc; ctx.shadowColor = acc; ctx.shadowBlur = 12; ctx.fillRect(crate.x - 14, crate.y - 12, 28, 24); ctx.shadowBlur = 0; }
+            if (!done) loop = requestAnimationFrame(draw);
+        }
+        let loop = requestAnimationFrame(draw);
+        return { destroy() { cancelAnimationFrame(loop); document.removeEventListener('keydown', key); } };
+    }
+});
+    </script>
+    <script>MG.register('suture', {
+    title: 'Suture',
+    hint: 'Click each stitch when its ring shrinks into the green',
+    run(api) {
+        const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
+        const W = 400, H = 280;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        cvs.style.cursor = 'pointer';
+        api.board.appendChild(cvs);
+        const ctx = cvs.getContext('2d');
+
+        const css = getComputedStyle(document.documentElement);
+        const acc = (css.getPropertyValue('--accent') || '#00e0b8').trim();
+        const suc = (css.getPropertyValue('--success') || '#39d98a').trim();
+
+        const N = 4 + Math.floor(diff / 2), x0 = 50, x1 = W - 50, yMid = H / 2, stitches = [];
+        for (let i = 0; i < N; i++) { const x = x0 + (x1 - x0) * ((i + 0.5) / N); stitches.push({ x, y: yMid + (i % 2 === 0 ? -26 : 26), done: false }); }
+        let idx = 0, ring = 1, dirR = -1, done = false;
+        const ringSpd = 0.012 + diff * 0.003, band = Math.max(0.1, 0.26 - diff * 0.03), lo = 0.18, hi = lo + band;
+
+        api.setDots(N);
+        function attempt(cx, cy) {
+            if (done) return;
+            const s = stitches[idx];
+            if (Math.hypot(cx - s.x, cy - s.y) < 42 && ring >= lo && ring <= hi) {
+                s.done = true; idx++; api.sfx('latch'); api.setDots(N, stitches.map(st => st.done ? 'done' : '')); ring = 1; dirR = -1;
+                if (idx >= N) { done = true; api.stopTimer(); api.setTag('CLOSED'); setTimeout(() => api.succeed(), 300); }
+            } else { api.shake(); api.addTime(-1500); }
+        }
+        cvs.addEventListener('click', (e) => { const b = cvs.getBoundingClientRect(); attempt((e.clientX - b.left) * (W / b.width), (e.clientY - b.top) * (H / b.height)); });
+        api.setTag('SUTURING');
+        api.startTimer(Math.max(16, 28 - diff * 2), () => { if (!done) { done = true; api.stopTimer(); setTimeout(() => api.fail(), 200); } });
+        function draw() {
+            if (!done) { ring += ringSpd * dirR; if (ring < lo - 0.12) dirR = 1; if (ring > 1) { ring = 1; dirR = -1; } }
+            ctx.clearRect(0, 0, W, H);
+            ctx.strokeStyle = 'rgba(255,80,90,0.55)'; ctx.lineWidth = 6; ctx.beginPath();
+            for (let x = x0 - 10; x <= x1 + 10; x += 14) { const yy = yMid + Math.sin(x * 0.25) * 4; x === x0 - 10 ? ctx.moveTo(x, yy) : ctx.lineTo(x, yy); }
+            ctx.stroke();
+            ctx.strokeStyle = acc; ctx.lineWidth = 2;
+            stitches.forEach(s => { if (s.done) { ctx.beginPath(); ctx.moveTo(s.x, yMid - 26); ctx.lineTo(s.x, yMid + 26); ctx.stroke(); } });
+            stitches.forEach((s, i) => { ctx.fillStyle = s.done ? suc : (i === idx ? '#fff' : 'rgba(255,255,255,0.3)'); ctx.beginPath(); ctx.arc(s.x, s.y, 4, 0, Math.PI * 2); ctx.fill(); });
+            if (!done && idx < N) {
+                const s = stitches[idx], inB = ring >= lo && ring <= hi;
+                ctx.strokeStyle = 'rgba(57,217,138,0.3)'; ctx.lineWidth = (hi - lo) * 30; ctx.beginPath(); ctx.arc(s.x, s.y, 6 + ((lo + hi) / 2) * 30, 0, Math.PI * 2); ctx.stroke();
+                ctx.strokeStyle = inB ? suc : acc; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(s.x, s.y, 6 + ring * 30, 0, Math.PI * 2); ctx.stroke();
+            }
+            if (!done) loop = requestAnimationFrame(draw);
+        }
+        let loop = requestAnimationFrame(draw);
+        return { destroy() { cancelAnimationFrame(loop); } };
+    }
+});
+    </script>
+    <script>MG.register('bonepin', {
+    title: 'Bone Set',
+    hint: 'Drag each fragment onto its matching slot',
+    run(api) {
+        const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
+        const W = 400, H = 280;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        cvs.style.cursor = 'grab';
+        api.board.appendChild(cvs);
+        const ctx = cvs.getContext('2d');
+
+        const css = getComputedStyle(document.documentElement);
+        const acc = (css.getPropertyValue('--accent') || '#00e0b8').trim();
+        const suc = (css.getPropertyValue('--success') || '#39d98a').trim();
+
+        const N = 2 + Math.floor(diff / 1.5), tol = Math.max(12, 30 - diff * 3), slotY = H / 2 - 22, pieces = [];
+        for (let i = 0; i < N; i++) {
+            const sx = 70 + (W - 140) * ((i + 0.5) / N);
+            pieces.push({ sx, sy: slotY, x: 60 + Math.random() * (W - 120), y: H - 58 + Math.random() * 28, w: (W - 140) / N - 8, rot: api.rand(-0.3, 0.3), placed: false });
+        }
+        let drag = null, off = { x: 0, y: 0 }, placedN = 0, done = false;
+
+        api.setDots(N);
+        function rel(e) { const b = cvs.getBoundingClientRect(); return { x: (e.clientX - b.left) * (W / b.width), y: (e.clientY - b.top) * (H / b.height) }; }
+        function at(cx, cy) { for (let i = pieces.length - 1; i >= 0; i--) { const p = pieces[i]; if (!p.placed && Math.abs(cx - p.x) < p.w / 2 + 6 && Math.abs(cy - p.y) < 16) return p; } return null; }
+        cvs.addEventListener('mousedown', (e) => { const r = rel(e); const p = at(r.x, r.y); if (p) { drag = p; off.x = r.x - p.x; off.y = r.y - p.y; cvs.style.cursor = 'grabbing'; } });
+        cvs.addEventListener('mousemove', (e) => { if (!drag) return; const r = rel(e); drag.x = r.x - off.x; drag.y = r.y - off.y; });
+        function dropPiece() {
+            if (!drag) return; const p = drag; drag = null; cvs.style.cursor = 'grab';
+            if (Math.hypot(p.x - p.sx, p.y - p.sy) < tol) {
+                p.placed = true; p.x = p.sx; p.y = p.sy; p.rot = 0; placedN++; api.sfx('latch'); api.setDots(N, pieces.map(pp => pp.placed ? 'done' : ''));
+                if (placedN >= N) { done = true; api.stopTimer(); api.setTag('SET'); setTimeout(() => api.succeed(), 300); }
+            } else api.sfx('tick');
+        }
+        cvs.addEventListener('mouseup', dropPiece);
+        cvs.addEventListener('mouseleave', dropPiece);
+        api.setTag('ALIGNING');
+        api.startTimer(Math.max(16, 30 - diff * 2), () => { if (!done) { done = true; api.stopTimer(); setTimeout(() => api.fail(), 200); } });
+        function frag(x, y, w, rot, col, alpha) {
+            ctx.save(); ctx.globalAlpha = alpha == null ? 1 : alpha; ctx.translate(x, y); ctx.rotate(rot);
+            const hw = w / 2; ctx.fillStyle = col; ctx.beginPath();
+            ctx.moveTo(-hw, -8); ctx.lineTo(hw, -8); ctx.arc(hw, 0, 8, -Math.PI / 2, Math.PI / 2); ctx.lineTo(-hw, 8); ctx.arc(-hw, 0, 8, Math.PI / 2, -Math.PI / 2); ctx.closePath(); ctx.fill();
+            ctx.restore(); ctx.globalAlpha = 1;
+        }
+        function draw() {
+            ctx.clearRect(0, 0, W, H);
+            pieces.forEach(p => { if (!p.placed) { frag(p.sx, p.sy, p.w, 0, 'rgba(255,255,255,0.5)', 0.22); ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.strokeRect(p.sx - p.w / 2, p.sy - 12, p.w, 24); ctx.setLineDash([]); } });
+            pieces.forEach(p => { const near = !p.placed && Math.hypot(p.x - p.sx, p.y - p.sy) < tol; frag(p.x, p.y, p.w, p.placed ? 0 : p.rot, (p.placed || near) ? suc : acc); });
+            if (!done) loop = requestAnimationFrame(draw);
+        }
+        let loop = requestAnimationFrame(draw);
+        return { destroy() { cancelAnimationFrame(loop); } };
+    }
+});
+    </script>
+    <script>MG.register('vitals', {
+    title: 'Vitals',
+    hint: 'Keep every gauge in the green — tap 1 / 2 / 3 to stabilize',
+    run(api) {
+        const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
+        const W = 380, H = 280;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        api.board.appendChild(cvs);
+        const ctx = cvs.getContext('2d');
+
+        const css = getComputedStyle(document.documentElement);
+        const acc = (css.getPropertyValue('--accent') || '#00e0b8').trim();
+        const suc = (css.getPropertyValue('--success') || '#39d98a').trim();
+        const dng = (css.getPropertyValue('--danger') || '#ff3b5c').trim();
+
+        const labels = ['HR', 'O2', 'BP'], keys = ['Digit1', 'Digit2', 'Digit3'], G = 3;
+        const bandH = Math.max(0.16, 0.3 - diff * 0.025), gauges = [];
+        for (let i = 0; i < G; i++) { const lo = 0.32 + Math.random() * (0.36 - bandH); gauges.push({ v: 0.5, lo, hi: lo + bandH, vel: 0, drift: 0.05 + diff * 0.02 }); }
+        let stab = 0, done = false;
+        const stabGain = 0.16;
+        let last = performance.now();
+
+        function key(e) { const i = keys.indexOf(e.code); if (i >= 0 && !done) { e.preventDefault(); gauges[i].vel += 0.16; api.sfx('tick'); } }
+        document.addEventListener('keydown', key);
+        api.setTag('MONITOR');
+        api.startTimer(Math.max(20, 34 - diff * 2), () => { if (!done && stab < 1) fail(); });
+        function fail() { if (done) return; done = true; document.removeEventListener('keydown', key); api.stopTimer(); api.shake(); setTimeout(() => api.fail(), 200); }
+        function win() { if (done) return; done = true; document.removeEventListener('keydown', key); api.stopTimer(); api.setTag('STABLE'); setTimeout(() => api.succeed(), 300); }
+        function draw() {
+            const now = performance.now(); const dt = Math.min(0.05, (now - last) / 1000); last = now;
+            let allIn = true;
+            if (!done) {
+                gauges.forEach(g => { g.vel += (Math.random() - 0.52) * g.drift * dt * 6; g.vel *= 0.92; g.v = Math.max(0.04, Math.min(0.96, g.v + g.vel * dt * 3)); if (g.v < g.lo || g.v > g.hi) allIn = false; });
+                stab = allIn ? Math.min(1, stab + stabGain * dt) : Math.max(0, stab - stabGain * 0.6 * dt);
+                if (stab >= 1) { win(); return; }
+            }
+            ctx.clearRect(0, 0, W, H);
+            const colW = 70, gap = (W - G * colW) / (G + 1), top = 26, bh = H - 96;
+            gauges.forEach((g, i) => {
+                const x = gap + i * (colW + gap);
+                ctx.fillStyle = 'rgba(255,255,255,0.07)'; ctx.fillRect(x, top, colW, bh);
+                ctx.fillStyle = 'rgba(57,217,138,0.18)'; ctx.fillRect(x, top + bh * (1 - g.hi), colW, bh * (g.hi - g.lo));
+                ctx.strokeStyle = 'rgba(57,217,138,0.5)'; ctx.lineWidth = 1; ctx.strokeRect(x, top + bh * (1 - g.hi), colW, bh * (g.hi - g.lo));
+                const inB = g.v >= g.lo && g.v <= g.hi, ny = top + bh * (1 - g.v);
+                ctx.fillStyle = inB ? suc : dng; ctx.shadowColor = inB ? suc : dng; ctx.shadowBlur = 10; ctx.fillRect(x - 3, ny - 3, colW + 6, 6); ctx.shadowBlur = 0;
+                ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = 'bold 13px monospace'; ctx.textAlign = 'center'; ctx.fillText(labels[i], x + colW / 2, H - 56);
+                ctx.fillStyle = acc; ctx.font = '11px monospace'; ctx.fillText('[' + (i + 1) + ']', x + colW / 2, H - 40);
+            });
+            ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(30, H - 24, W - 60, 10);
+            ctx.fillStyle = suc; ctx.fillRect(30, H - 24, (W - 60) * stab, 10);
+            ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '9px monospace'; ctx.textAlign = 'left'; ctx.fillText('STABILITY ' + Math.round(stab * 100) + '%', 30, H - 27);
+            if (!done) loop = requestAnimationFrame(draw);
+        }
+        let loop = requestAnimationFrame(draw);
+        return { destroy() { cancelAnimationFrame(loop); document.removeEventListener('keydown', key); } };
+    }
+});
+    </script>
     <script>
         window.GetParentResourceName = function () { return 'preview'; };
         const _origFetch = window.fetch;
@@ -4454,7 +5067,7 @@
                 return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
             return _origFetch.apply(this, arguments);
         };
-        const CATS = [['ESSENTIALS', '#39d98a', ["skillcheck", "lockpick", "keypad", "quicktime", "mash", "reaction", "stacker", "targets"]], ['CORE', '#00e0b8', ["livewire", "flatline", "deadcalm", "ghostsignal", "steadydose", "cuttheright", "vaultspin", "bluff", "decrypt", "gaslight"]], ['ADVANCED', '#ff8a00', ["overflow", "breachmatrix", "daemonrun", "pulse", "hottrace", "cascade"]], ['AAA-INSPIRED', '#c06bff', ["resonance", "intrusion", "override", "animus", "eaglevision"]], ['JOBS', '#ffd23f', ["fishing", "mining", "cooking", "welding", "harvest", "drilling", "locksmith", "hotwire", "crafting"]], ['HEIST', '#ff6b35', ["thermite", "lasergrid", "vaultdrill", "jammer", "dataheist"]]];
+        const CATS = [['ESSENTIALS', '#39d98a', ["skillcheck", "lockpick", "keypad", "quicktime", "mash", "reaction", "stacker", "targets"]], ['CORE', '#00e0b8', ["livewire", "flatline", "deadcalm", "ghostsignal", "steadydose", "cuttheright", "vaultspin", "bluff", "decrypt", "gaslight"]], ['ADVANCED', '#ff8a00', ["overflow", "breachmatrix", "daemonrun", "pulse", "hottrace", "cascade"]], ['AAA-INSPIRED', '#c06bff', ["resonance", "intrusion", "override", "animus", "eaglevision"]], ['JOBS', '#ffd23f', ["fishing", "mining", "cooking", "welding", "harvest", "drilling", "locksmith", "hotwire", "crafting", "lugnuts", "paintspray", "crane"]], ['CRIME', '#ff3b5c', ["tripwire", "pickpocket", "getaway"]], ['MEDICAL', '#36d1dc', ["suture", "bonepin", "vitals"]], ['HEIST', '#ff6b35', ["thermite", "lasergrid", "vaultdrill", "jammer", "dataheist"]]];
         let sndOn = true;
         function buildMenu() {
             let m = document.getElementById('previewMenu');
@@ -4472,7 +5085,7 @@
             CATS.forEach((c, ci) => { cats += '<div style="font-size:10px;letter-spacing:2px;color:' + c[1] + ';margin:' + (ci ? '12px' : '0') + ' 0 6px;">' + c[0] + '</div><div id="cat' + ci + '" style="display:grid;grid-template-columns:1fr 1fr;gap:7px;"></div>'; });
             m.innerHTML = '<div style="background:#0a0e14;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:26px;width:600px;box-shadow:0 0 60px -20px #00e0b8;margin:auto;">'
                 + '<div style="font-size:11px;letter-spacing:4px;color:#00e0b8;">AY-EYE MINIGAMES</div>'
-                + '<div style="font-size:23px;font-weight:700;color:#e8edf2;margin:4px 0 14px;">Browser Preview · 43 games</div>' + tag
+                + '<div style="font-size:23px;font-weight:700;color:#e8edf2;margin:4px 0 14px;">Browser Preview · 52 games</div>' + tag
                 + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="color:#6b7686;font-size:13px;">Difficulty</span>'
                 + '<input id="pvDiff" type="range" min="1" max="5" value="2" style="flex:1;"><span id="pvDiffV" style="color:#00e0b8;width:14px;">2</span></div>'
                 + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;"><span style="color:#6b7686;font-size:13px;">Sound</span>'

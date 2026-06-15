@@ -58,7 +58,29 @@ Config.Defaults = {
     drilling     = { difficulty = 2 },
     locksmith    = { difficulty = 2 },
     hotwire      = { difficulty = 2 },
-    crafting     = { difficulty = 2 }
+    crafting     = { difficulty = 2 },
+
+    -- crime & heist
+    tripwire     = { difficulty = 2 },
+    pickpocket   = { difficulty = 2 },
+    getaway      = { difficulty = 2 },
+
+    -- jobs & trades (extended)
+    lugnuts      = { difficulty = 2 },
+    paintspray   = { difficulty = 2 },
+    crane        = { difficulty = 2 },
+
+    -- medical & rescue
+    suture       = { difficulty = 2 },
+    bonepin      = { difficulty = 2 },
+    vitals       = { difficulty = 2 },
+
+    -- heist
+    thermite     = { difficulty = 2 },
+    lasergrid    = { difficulty = 2 },
+    vaultdrill   = { difficulty = 2 },
+    jammer       = { difficulty = 2 },
+    dataheist    = { difficulty = 2 }
 }
 
 -- Freeze the player while a game is open.
