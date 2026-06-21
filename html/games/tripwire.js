@@ -37,7 +37,7 @@ MG.register('tripwire', {
 
         const start = { x: 26, y: H / 2 };
         const av = { x: start.x, y: start.y, r: 8 };
-        let mx = start.x, my = start.y, has = false, done = false, cool = 0;
+        let mx = start.x, my = start.y, has = false, done = false;
 
         cvs.addEventListener('mousemove', (e) => {
             const b = cvs.getBoundingClientRect();
@@ -88,8 +88,7 @@ MG.register('tripwire', {
             ctx.beginPath(); ctx.arc(av.x, av.y, av.r, 0, Math.PI * 2); ctx.fill();
             ctx.shadowBlur = 0;
 
-            if (cool > 0) cool--;
-            if (tripped && cool === 0 && !done) { cool = 40; api.shake(); api.sfx('zap'); api.addTime(-1200); }
+            if (tripped && !done) { api.sfx('zap'); api.shake(); fail(); return; }
             if (av.x > exX && !done) { win(); return; }
 
             if (!done) loop = requestAnimationFrame(draw);

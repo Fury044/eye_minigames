@@ -80,7 +80,21 @@ Config.Defaults = {
     lasergrid    = { difficulty = 2 },
     vaultdrill   = { difficulty = 2 },
     jammer       = { difficulty = 2 },
-    dataheist    = { difficulty = 2 }
+    dataheist    = { difficulty = 2 },
+
+    -- mechanic (sorting / moving things around)
+    partsort     = { difficulty = 2 },
+    toolbox      = { difficulty = 2 },
+    packing      = { difficulty = 2 },
+    beltsort     = { difficulty = 2 },
+
+    -- police & forensics
+    fingerprint  = { difficulty = 2 },
+    breathalyzer = { difficulty = 2 },
+
+    -- drugs & chemistry
+    titration    = { difficulty = 2 },
+    pillpress    = { difficulty = 2 }
 }
 
 -- Freeze the player while a game is open.

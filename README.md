@@ -1,13 +1,13 @@
 # Ay-eye Minigames
 
-A **standalone, framework-agnostic** pack of 52 cinematic skill-check minigames
+A **standalone, framework-agnostic** pack of 60 cinematic skill-check minigames
 for FiveM, with one clean export API. No ESX, QBCore, QBox, or ox_lib required.
 Drop it in, call it from any script, get a `true`/`false` back.
 
 # [Preview](https://eye-minigames.vercel.app/) 
 ---
 
-## The games (52 total)
+## The games (60 total)
 
 ### Essentials (8 — the everyday workhorses, fit any script)
 
@@ -75,11 +75,20 @@ Drop it in, call it from any script, get a `true`/`false` back.
 | `paintspray` | Paint Booth | spray the panel to even coverage without over-soaking (drips) | bodyshop, resprays, detailing |
 | `crane` | Cargo Crane | lead the pendulum swing and drop crates onto the truck | docks, warehouse, loading |
 
+### Mechanic (4 — sorting & moving things around)
+
+| id | name | mechanic | good for |
+|----|------|----------|----------|
+| `partsort` | Parts Sort | send each part to its matching bin (1 / 2 / 3) | mechanic, warehouse, parts shop, recycling |
+| `toolbox` | Tool Board | drag each tool onto its matching shadow outline | mechanic, garage, organizing, prep |
+| `packing` | Crate Packing | drag every part into the crate so they all fit (Tetris-style) | warehouse, shipping, loadouts, storage |
+| `beltsort` | Quality Control | pull the cracked parts off the conveyor, let good ones pass | factory, assembly line, inspection, recycling |
+
 ### Crime & Heist (3)
 
 | id | name | mechanic | good for |
 |----|------|----------|----------|
-| `tripwire` | Tripwire | thread through rotating laser beams to the green exit | infiltration, heists, security rooms |
+| `tripwire` | Tripwire | weave past sweeping lasers to the exit — one touch = caught | infiltration, heists, security rooms |
 | `pickpocket` | Pickpocket | hold to lift, release before the mark glances at you | theft, lifting, stealth |
 | `getaway` | Getaway | swap lanes to dodge oncoming traffic and survive the run | chases, getaway driver, street racing |
 
@@ -90,6 +99,20 @@ Drop it in, call it from any script, get a `true`/`false` back.
 | `suture` | Suture | click each stitch as its ring shrinks into the green | EMS, surgery, field medic |
 | `bonepin` | Bone Set | drag fractured fragments into their matching slots | orthopedics, surgery, first aid |
 | `vitals` | Vitals | keep three drifting gauges in the green — tap 1 / 2 / 3 | EMS monitoring, ICU, anesthesia |
+
+### Police & Forensics (2)
+
+| id | name | mechanic | good for |
+|----|------|----------|----------|
+| `fingerprint` | Fingerprint | match the scanned print — click the identically-oriented one | police, forensics, evidence, access ID |
+| `breathalyzer` | Breathalyzer | hold to blow, keep airflow in the green to log a clean reading | DUI stops, sobriety, medical |
+
+### Drugs & Chemistry (2)
+
+| id | name | mechanic | good for |
+|----|------|----------|----------|
+| `titration` | Titration | pour reagent and stop exactly in the narrow target band | drug labs, chemistry, lab work, brewing |
+| `pillpress` | Pill Press | time each press stroke to stamp a clean pill | drug production, pharma, manufacturing |
 
 ### Heist (5)
 

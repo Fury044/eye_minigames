@@ -4480,7 +4480,7 @@
 
         const start = { x: 26, y: H / 2 };
         const av = { x: start.x, y: start.y, r: 8 };
-        let mx = start.x, my = start.y, has = false, done = false, cool = 0;
+        let mx = start.x, my = start.y, has = false, done = false;
 
         cvs.addEventListener('mousemove', (e) => { const b = cvs.getBoundingClientRect(); mx = (e.clientX - b.left) * (W / b.width); my = (e.clientY - b.top) * (H / b.height); has = true; });
 
@@ -4519,8 +4519,7 @@
             });
             ctx.fillStyle = tripped ? dng : acc; ctx.shadowColor = tripped ? dng : acc; ctx.shadowBlur = 14;
             ctx.beginPath(); ctx.arc(av.x, av.y, av.r, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-            if (cool > 0) cool--;
-            if (tripped && cool === 0 && !done) { cool = 40; api.shake(); api.sfx('zap'); api.addTime(-1200); }
+            if (tripped && !done) { api.sfx('zap'); api.shake(); fail(); return; }
             if (av.x > exX && !done) { win(); return; }
             if (!done) loop = requestAnimationFrame(draw);
         }
@@ -5054,6 +5053,676 @@
     }
 });
     </script>
+    <script>MG.register('partsort', {
+    title: 'Parts Sort',
+    hint: 'Send each part to its bin · press 1 / 2 / 3 (or click a bin)',
+    run(api) {
+        const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
+        const W = 420, H = 300;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        cvs.style.cursor = 'pointer';
+        api.board.appendChild(cvs);
+        const ctx = cvs.getContext('2d');
+
+        const css = getComputedStyle(document.documentElement);
+        const acc = (css.getPropertyValue('--accent') || '#00e0b8').trim();
+        const suc = (css.getPropertyValue('--success') || '#39d98a').trim();
+        const dng = (css.getPropertyValue('--danger') || '#ff3b5c').trim();
+
+        const BINS = [
+            { name: 'NUTS', col: '#ffd23f', icon: 'hex' },
+            { name: 'BOLTS', col: acc, icon: 'bolt' },
+            { name: 'GEARS', col: '#c06bff', icon: 'gear' }
+        ];
+        const need = 7 + diff * 2;
+        const maxWrong = Math.max(2, 5 - diff);
+        let sorted = 0, wrong = 0, done = false, part = 0, fb = 0, fbCol = '';
+
+        function spawn() { part = api.randInt(0, BINS.length - 1); }
+        spawn();
+        api.setDots(maxWrong);
+
+        function choose(b) {
+            if (done || b < 0 || b >= BINS.length) return;
+            if (b === part) {
+                sorted++; api.sfx('latch'); fb = 8; fbCol = suc;
+                api.setTag(sorted + '/' + need);
+                if (sorted >= need) { done = true; api.stopTimer(); api.setTag('SORTED'); document.removeEventListener('keydown', key); setTimeout(() => api.succeed(), 300); return; }
+                spawn();
+            } else {
+                wrong++; api.shake(); fb = 8; fbCol = dng;
+                api.setDots(maxWrong, Array.from({ length: maxWrong }, (_, i) => i < wrong ? 'fail' : ''));
+                if (wrong >= maxWrong) { done = true; api.stopTimer(); document.removeEventListener('keydown', key); setTimeout(() => api.fail(), 300); }
+            }
+        }
+        function key(e) {
+            const n = { Digit1: 0, Digit2: 1, Digit3: 2 }[e.code];
+            if (n != null && !done) { e.preventDefault(); choose(n); }
+        }
+        document.addEventListener('keydown', key);
+        cvs.addEventListener('click', (e) => {
+            const b = cvs.getBoundingClientRect();
+            const x = (e.clientX - b.left) * (W / b.width), y = (e.clientY - b.top) * (H / b.height);
+            if (y > H - 96) choose(Math.floor(x / (W / 3)));
+        });
+
+        api.setTag('0/' + need);
+        api.startTimer(Math.max(16, 30 - diff * 2), () => { if (!done) { done = true; api.stopTimer(); document.removeEventListener('keydown', key); setTimeout(() => api.fail(), 200); } });
+
+        function icon(shape, x, y, r, col) {
+            ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.lineCap = 'round';
+            if (shape === 'hex') {
+                ctx.beginPath();
+                for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; const px = x + Math.cos(a) * r, py = y + Math.sin(a) * r; k ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+                ctx.closePath(); ctx.stroke();
+                ctx.beginPath(); ctx.arc(x, y, r * 0.42, 0, Math.PI * 2); ctx.stroke();
+            } else if (shape === 'bolt') {
+                ctx.beginPath();
+                for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; const px = x + Math.cos(a) * r * 0.7, py = y - r * 0.4 + Math.sin(a) * r * 0.7; k ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+                ctx.closePath(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + r); ctx.stroke();
+            } else {
+                ctx.beginPath(); ctx.arc(x, y, r * 0.6, 0, Math.PI * 2); ctx.stroke();
+                for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * r * 0.6, y + Math.sin(a) * r * 0.6); ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); ctx.stroke(); }
+                ctx.beginPath(); ctx.arc(x, y, r * 0.2, 0, Math.PI * 2); ctx.stroke();
+            }
+        }
+        function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+        function draw() {
+            if (fb > 0) fb--;
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.font = '11px monospace'; ctx.textAlign = 'center';
+            ctx.fillText('SORTED ' + sorted + ' / ' + need, W / 2, 20);
+            const px = W / 2, py = 88;
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(px - 42, 34); ctx.lineTo(px - 42, py + 18); ctx.moveTo(px + 42, 34); ctx.lineTo(px + 42, py + 18); ctx.stroke();
+            const b = BINS[part];
+            ctx.save();
+            ctx.shadowColor = fb > 0 ? fbCol : b.col; ctx.shadowBlur = fb > 0 ? 20 : 12;
+            ctx.fillStyle = 'rgba(255,255,255,0.04)';
+            ctx.beginPath(); ctx.arc(px, py, 30, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+            icon(b.icon, px, py, 20, fb > 0 ? fbCol : b.col);
+            const bw = W / 3;
+            BINS.forEach((bin, i) => {
+                const bx = i * bw, byTop = H - 92;
+                ctx.fillStyle = 'rgba(255,255,255,0.04)'; rr(bx + 8, byTop, bw - 16, 78, 8); ctx.fill();
+                ctx.strokeStyle = bin.col; ctx.lineWidth = 2; rr(bx + 8, byTop, bw - 16, 78, 8); ctx.stroke();
+                icon(bin.icon, bx + bw / 2, byTop + 28, 14, bin.col);
+                ctx.fillStyle = bin.col; ctx.font = 'bold 11px monospace'; ctx.textAlign = 'center';
+                ctx.fillText(bin.name, bx + bw / 2, byTop + 58);
+                ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '10px monospace';
+                ctx.fillText('[' + (i + 1) + ']', bx + bw / 2, byTop + 72);
+            });
+            if (!done) loop = requestAnimationFrame(draw);
+        }
+        let loop = requestAnimationFrame(draw);
+        return { destroy() { cancelAnimationFrame(loop); document.removeEventListener('keydown', key); } };
+    }
+});
+    </script>
+    <script>MG.register('toolbox', {
+    title: 'Tool Board',
+    hint: 'Drag each tool onto its matching outline',
+    run(api) {
+        const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
+        const W = 440, H = 300;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        cvs.style.cursor = 'grab';
+        api.board.appendChild(cvs);
+        const ctx = cvs.getContext('2d');
+
+        const css = getComputedStyle(document.documentElement);
+        const acc = (css.getPropertyValue('--accent') || '#00e0b8').trim();
+        const suc = (css.getPropertyValue('--success') || '#39d98a').trim();
+
+        const TYPES = ['wrench', 'driver', 'hammer', 'pliers', 'spanner'];
+        const N = 3 + Math.floor(diff / 1.5);
+        const types = TYPES.slice(0, N);
+        const tol = 34;
+
+        const slotTypes = types.slice();
+        for (let i = slotTypes.length - 1; i > 0; i--) { const j = api.randInt(0, i); const t = slotTypes[i]; slotTypes[i] = slotTypes[j]; slotTypes[j] = t; }
+        const slots = slotTypes.map((type, i) => ({ type, x: W * (i + 0.5) / N, y: 92, filled: false }));
+
+        const homeXs = [];
+        for (let i = 0; i < N; i++) homeXs.push(W * (i + 0.5) / N);
+        for (let i = homeXs.length - 1; i > 0; i--) { const j = api.randInt(0, i); const t = homeXs[i]; homeXs[i] = homeXs[j]; homeXs[j] = t; }
+        const tools = types.map((type, i) => ({ type, x: homeXs[i], y: H - 58, hx: homeXs[i], hy: H - 58, placed: false }));
+
+        let drag = null, off = { x: 0, y: 0 }, placedN = 0, done = false;
+        api.setDots(N);
+
+        function rel(e) { const b = cvs.getBoundingClientRect(); return { x: (e.clientX - b.left) * (W / b.width), y: (e.clientY - b.top) * (H / b.height) }; }
+        function at(x, y) { for (let i = tools.length - 1; i >= 0; i--) { const t = tools[i]; if (!t.placed && Math.abs(x - t.x) < 24 && Math.abs(y - t.y) < 22) return t; } return null; }
+        cvs.addEventListener('mousedown', (e) => { const r = rel(e); const t = at(r.x, r.y); if (t) { drag = t; off.x = r.x - t.x; off.y = r.y - t.y; cvs.style.cursor = 'grabbing'; } });
+        cvs.addEventListener('mousemove', (e) => { if (!drag) return; const r = rel(e); drag.x = r.x - off.x; drag.y = r.y - off.y; });
+        function dropTool() {
+            if (!drag) return; const t = drag; drag = null; cvs.style.cursor = 'grab';
+            const s = slots.find(sl => !sl.filled && sl.type === t.type && Math.hypot(t.x - sl.x, t.y - sl.y) < tol);
+            if (s) {
+                s.filled = true; t.placed = true; t.x = s.x; t.y = s.y; placedN++; api.sfx('latch');
+                api.setDots(N, tools.map(tt => tt.placed ? 'done' : ''));
+                if (placedN >= N) { done = true; api.stopTimer(); api.setTag('STOCKED'); setTimeout(() => api.succeed(), 300); }
+            } else { t.x = t.hx; t.y = t.hy; api.sfx('tick'); }
+        }
+        cvs.addEventListener('mouseup', dropTool);
+        cvs.addEventListener('mouseleave', dropTool);
+
+        api.setTag('ORGANIZE');
+        api.startTimer(Math.max(18, 32 - diff * 2), () => { if (!done) { done = true; api.stopTimer(); setTimeout(() => api.fail(), 200); } });
+
+        function drawTool(type, x, y, col, alpha) {
+            ctx.save(); ctx.globalAlpha = alpha == null ? 1 : alpha; ctx.translate(x, y);
+            ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            if (type === 'wrench') { ctx.rotate(-0.6); ctx.beginPath(); ctx.moveTo(-2, 16); ctx.lineTo(2, -6); ctx.stroke(); ctx.beginPath(); ctx.arc(2, -11, 7, Math.PI * 0.2, Math.PI * 1.8); ctx.stroke(); }
+            else if (type === 'driver') { ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(0, -16); ctx.lineTo(0, 2); ctx.stroke(); ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, 2); ctx.lineTo(0, 16); ctx.stroke(); }
+            else if (type === 'hammer') { ctx.beginPath(); ctx.moveTo(0, -2); ctx.lineTo(0, 18); ctx.stroke(); ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(-11, -9); ctx.lineTo(11, -9); ctx.stroke(); }
+            else if (type === 'pliers') { ctx.beginPath(); ctx.moveTo(-6, 18); ctx.lineTo(2, -1); ctx.lineTo(-3, -16); ctx.stroke(); ctx.beginPath(); ctx.moveTo(6, 18); ctx.lineTo(-2, -1); ctx.lineTo(3, -16); ctx.stroke(); }
+            else { ctx.beginPath(); ctx.arc(0, -10, 7, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(0, -10, 3, 0, Math.PI * 2); ctx.stroke(); ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0, -3); ctx.lineTo(0, 18); ctx.stroke(); }
+            ctx.restore(); ctx.globalAlpha = 1;
+        }
+        function draw() {
+            ctx.clearRect(0, 0, W, H);
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1; ctx.strokeRect(16, 42, W - 32, 104);
+            ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '10px monospace'; ctx.textAlign = 'left';
+            ctx.fillText('SHADOW BOARD', 22, 56);
+            ctx.fillText('TOOLS', 22, H - 78);
+            slots.forEach(s => {
+                if (!s.filled) {
+                    drawTool(s.type, s.x, s.y, 'rgba(255,255,255,0.16)', 1);
+                    ctx.setLineDash([4, 3]); ctx.strokeStyle = 'rgba(255,255,255,0.16)'; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.arc(s.x, s.y, tol - 6, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+                }
+            });
+            tools.forEach(t => { if (t !== drag) drawTool(t.type, t.x, t.y, t.placed ? suc : acc); });
+            if (drag) drawTool(drag.type, drag.x, drag.y, acc);
+            if (!done) loop = requestAnimationFrame(draw);
+        }
+        let loop = requestAnimationFrame(draw);
+        return { destroy() { cancelAnimationFrame(loop); } };
+    }
+});
+    </script>
+    <script>MG.register('packing', {
+    title: 'Crate Packing',
+    hint: 'Drag every part into the crate so they all fit',
+    run(api) {
+        const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
+        const W = 440, H = 300;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        cvs.style.cursor = 'grab';
+        api.board.appendChild(cvs);
+        const ctx = cvs.getContext('2d');
+
+        const css = getComputedStyle(document.documentElement);
+        const suc = (css.getPropertyValue('--success') || '#39d98a').trim();
+
+        const cols = 5, rows = 3, cell = 34;
+        const gx = (W - cols * cell) / 2, gy = 26;
+        const occ = Array.from({ length: rows }, () => Array(cols).fill(-1));
+        const maxPieces = 4 + Math.floor(diff / 2);
+
+        const rects = [];
+        (function part(x, y, w, h) {
+            if (w > 2 || h > 2) {
+                let vertical = (w > 2 && h <= 2) ? true : (h > 2 && w <= 2) ? false : (Math.random() < 0.5);
+                if (vertical && w < 2) vertical = false;
+                if (!vertical && h < 2) vertical = true;
+                if (vertical) { const cut = 1 + Math.floor(Math.random() * (w - 1)); part(x, y, cut, h); part(x + cut, y, w - cut, h); }
+                else { const cut = 1 + Math.floor(Math.random() * (h - 1)); part(x, y, w, cut); part(x, y + cut, w, h - cut); }
+                return;
+            }
+            const canV = w >= 2, canH = h >= 2;
+            if ((canV || canH) && rects.length < maxPieces - 1 && Math.random() < 0.4) {
+                const vertical = canV && (!canH || Math.random() < 0.5);
+                if (vertical) { part(x, y, 1, h); part(x + 1, y, w - 1, h); }
+                else { part(x, y, w, 1); part(x, y + 1, w, h - 1); }
+                return;
+            }
+            rects.push({ x, y, w, h });
+        })(0, 0, cols, rows);
+
+        const COLORS = ['#00e0b8', '#ffd23f', '#c06bff', '#39d98a', '#ff8a3d', '#4ad9ff', '#ff6b9d'];
+        const pieces = rects.map((r, i) => ({ w: r.w, h: r.h, col: COLORS[i % COLORS.length], placed: false, gxc: -1, gyc: -1, px: 0, py: 0, hx: 0, hy: 0 }));
+
+        const trayTop = gy + rows * cell + 24;
+        let txp = 16, typ = trayTop, rh = 0;
+        pieces.forEach(p => {
+            const w = p.w * cell, h = p.h * cell;
+            if (txp + w > W - 16) { txp = 16; typ += rh + 10; rh = 0; }
+            p.px = p.hx = txp; p.py = p.hy = typ; txp += w + 12; rh = Math.max(rh, h);
+        });
+
+        let drag = null, off = { x: 0, y: 0 }, placedN = 0, done = false;
+        api.setDots(pieces.length);
+        function updateDots() { api.setDots(pieces.length, pieces.map(p => p.placed ? 'done' : '')); }
+
+        function rel(e) { const b = cvs.getBoundingClientRect(); return { x: (e.clientX - b.left) * (W / b.width), y: (e.clientY - b.top) * (H / b.height) }; }
+        function at(x, y) { for (let i = pieces.length - 1; i >= 0; i--) { const p = pieces[i]; if (x >= p.px && x <= p.px + p.w * cell && y >= p.py && y <= p.py + p.h * cell) return p; } return null; }
+        function free(p) { if (p.gxc >= 0) { for (let r = 0; r < p.h; r++) for (let c = 0; c < p.w; c++) occ[p.gyc + r][p.gxc + c] = -1; p.gxc = p.gyc = -1; if (p.placed) { p.placed = false; placedN--; } } }
+        cvs.addEventListener('mousedown', (e) => { const r = rel(e); const p = at(r.x, r.y); if (p) { drag = p; off.x = r.x - p.px; off.y = r.y - p.py; free(p); updateDots(); cvs.style.cursor = 'grabbing'; } });
+        cvs.addEventListener('mousemove', (e) => { if (!drag) return; const r = rel(e); drag.px = r.x - off.x; drag.py = r.y - off.y; });
+        function fitsAt(p, cgx, cgy) {
+            if (cgx < 0 || cgy < 0 || cgx + p.w > cols || cgy + p.h > rows) return false;
+            for (let r = 0; r < p.h; r++) for (let c = 0; c < p.w; c++) if (occ[cgy + r][cgx + c] !== -1) return false;
+            return true;
+        }
+        function drop() {
+            if (!drag) return; const p = drag; drag = null; cvs.style.cursor = 'grab';
+            const cgx = Math.round((p.px - gx) / cell), cgy = Math.round((p.py - gy) / cell);
+            if (fitsAt(p, cgx, cgy)) {
+                const idx = pieces.indexOf(p);
+                for (let r = 0; r < p.h; r++) for (let c = 0; c < p.w; c++) occ[cgy + r][cgx + c] = idx;
+                p.gxc = cgx; p.gyc = cgy; p.px = gx + cgx * cell; p.py = gy + cgy * cell; p.placed = true; placedN++; api.sfx('latch'); updateDots();
+                if (placedN >= pieces.length) { done = true; api.stopTimer(); api.setTag('PACKED'); setTimeout(() => api.succeed(), 300); }
+            } else { p.px = p.hx; p.py = p.hy; api.sfx('tick'); }
+        }
+        cvs.addEventListener('mouseup', drop);
+        cvs.addEventListener('mouseleave', drop);
+
+        api.setTag('PACKING');
+        api.startTimer(Math.max(22, 40 - diff * 3), () => { if (!done) { done = true; api.stopTimer(); setTimeout(() => api.fail(), 200); } });
+
+        function drawPiece(p, dx, dy, alpha) {
+            ctx.globalAlpha = alpha; ctx.fillStyle = p.col; ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 1;
+            for (let r = 0; r < p.h; r++) for (let c = 0; c < p.w; c++) { ctx.fillRect(dx + c * cell + 1, dy + r * cell + 1, cell - 2, cell - 2); ctx.strokeRect(dx + c * cell + 1, dy + r * cell + 1, cell - 2, cell - 2); }
+            ctx.globalAlpha = 1;
+        }
+        function draw() {
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = '10px monospace'; ctx.textAlign = 'left'; ctx.fillText('CRATE', gx, gy - 8);
+            ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 2; ctx.strokeRect(gx - 3, gy - 3, cols * cell + 6, rows * cell + 6);
+            ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+            for (let c = 0; c <= cols; c++) { ctx.beginPath(); ctx.moveTo(gx + c * cell, gy); ctx.lineTo(gx + c * cell, gy + rows * cell); ctx.stroke(); }
+            for (let r = 0; r <= rows; r++) { ctx.beginPath(); ctx.moveTo(gx, gy + r * cell); ctx.lineTo(gx + cols * cell, gy + r * cell); ctx.stroke(); }
+            ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillText('PARTS', 16, trayTop - 8);
+            pieces.forEach(p => { if (p !== drag) drawPiece(p, p.px, p.py, p.placed ? 1 : 0.9); });
+            if (drag) {
+                const cgx = Math.round((drag.px - gx) / cell), cgy = Math.round((drag.py - gy) / cell);
+                if (fitsAt(drag, cgx, cgy)) { ctx.fillStyle = 'rgba(57,217,138,0.2)'; ctx.fillRect(gx + cgx * cell, gy + cgy * cell, drag.w * cell, drag.h * cell); }
+                drawPiece(drag, drag.px, drag.py, 0.95);
+            }
+            if (!done) loop = requestAnimationFrame(draw);
+        }
+        let loop = requestAnimationFrame(draw);
+        return { destroy() { cancelAnimationFrame(loop); } };
+    }
+});
+    </script>
+    <script>MG.register('beltsort', {
+    title: 'Quality Control',
+    hint: 'Click the cracked (red) parts before they leave the belt · let good ones pass',
+    run(api) {
+        const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
+        const W = 440, H = 280;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        cvs.style.cursor = 'pointer';
+        api.board.appendChild(cvs);
+        const ctx = cvs.getContext('2d');
+
+        const css = getComputedStyle(document.documentElement);
+        const acc = (css.getPropertyValue('--accent') || '#00e0b8').trim();
+        const suc = (css.getPropertyValue('--success') || '#39d98a').trim();
+        const dng = (css.getPropertyValue('--danger') || '#ff3b5c').trim();
+
+        const need = 5 + diff;
+        const maxWrong = Math.max(2, 5 - diff);
+        const speed = 1.1 + diff * 0.4;
+        const spawnGap = Math.max(34, 72 - diff * 8);
+        const beltY = H / 2, R = 16;
+        let parts = [], caught = 0, wrong = 0, frame = 0, done = false, dash = 0;
+
+        api.setDots(maxWrong);
+        function strike() { wrong++; api.setDots(maxWrong, Array.from({ length: maxWrong }, (_, i) => i < wrong ? 'fail' : '')); if (wrong >= maxWrong) finish(false); }
+        function finish(ok) { if (done) return; done = true; api.stopTimer(); setTimeout(() => ok ? api.succeed() : api.fail(), 250); }
+
+        cvs.addEventListener('click', (e) => {
+            if (done) return;
+            const b = cvs.getBoundingClientRect();
+            const x = (e.clientX - b.left) * (W / b.width), y = (e.clientY - b.top) * (H / b.height);
+            for (let i = parts.length - 1; i >= 0; i--) {
+                const p = parts[i];
+                if (!p.gone && Math.hypot(x - p.x, y - beltY) < R + 4) {
+                    p.gone = true;
+                    if (p.def) { caught++; api.sfx('zap'); api.setTag(caught + '/' + need); if (caught >= need) finish(true); }
+                    else { api.shake(); strike(); }
+                    return;
+                }
+            }
+        });
+
+        api.setTag('0/' + need);
+        api.startTimer(Math.max(20, 34 - diff * 2), () => finish(caught >= need));
+
+        function gear(x, y, r, col, def) {
+            ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 3; ctx.lineCap = 'round';
+            ctx.shadowColor = col; ctx.shadowBlur = 8;
+            ctx.beginPath(); ctx.arc(x, y, r * 0.62, 0, Math.PI * 2); ctx.stroke();
+            for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * r * 0.62, y + Math.sin(a) * r * 0.62); ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); ctx.stroke(); }
+            ctx.shadowBlur = 0;
+            ctx.beginPath(); ctx.arc(x, y, r * 0.2, 0, Math.PI * 2); ctx.stroke();
+            if (def) { ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(x - r * 0.4, y - r * 0.3); ctx.lineTo(x + r * 0.05, y + r * 0.1); ctx.lineTo(x - r * 0.15, y + r * 0.35); ctx.stroke(); }
+        }
+
+        function draw() {
+            frame++;
+            if (!done && frame % spawnGap === 0) parts.push({ x: -R, def: Math.random() < 0.5, gone: false });
+            if (!done) dash = (dash + speed) % 28;
+            ctx.clearRect(0, 0, W, H);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.04)'; ctx.fillRect(0, beltY - R - 10, W, (R + 10) * 2);
+            ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(0, beltY - R - 10); ctx.lineTo(W, beltY - R - 10); ctx.moveTo(0, beltY + R + 10); ctx.lineTo(W, beltY + R + 10); ctx.stroke();
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 2;
+            for (let x = -28 + dash; x < W; x += 28) { ctx.beginPath(); ctx.moveTo(x, beltY + R + 10); ctx.lineTo(x + 14, beltY + R + 10); ctx.stroke(); }
+
+            parts.forEach(p => {
+                if (p.gone) return;
+                if (!done) p.x += speed;
+                if (p.x > W + R) { p.gone = true; if (p.def) strike(); return; }
+                gear(p.x, beltY, R, p.def ? dng : acc, p.def);
+            });
+            parts = parts.filter(p => !p.gone);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '11px monospace'; ctx.textAlign = 'center';
+            ctx.fillText('PULL THE CRACKED PARTS · ' + caught + ' / ' + need, W / 2, 22);
+            if (!done) loop = requestAnimationFrame(draw);
+        }
+        let loop = requestAnimationFrame(draw);
+        return { destroy() { cancelAnimationFrame(loop); } };
+    }
+});
+    </script>
+    <script>MG.register('fingerprint', {
+    title: 'Fingerprint',
+    hint: 'Match the scanned print · click the identical one',
+    run(api) {
+        const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
+        const W = 440, H = 300;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        cvs.style.cursor = 'pointer';
+        api.board.appendChild(cvs);
+        const ctx = cvs.getContext('2d');
+
+        const css = getComputedStyle(document.documentElement);
+        const acc = (css.getPropertyValue('--accent') || '#00e0b8').trim();
+
+        const rounds = 1 + Math.floor(diff / 2);
+        const N = 3 + Math.floor(diff / 1.3);
+        const ANG = [0, 1, 2, 3, 4, 5].map(i => i * Math.PI / 3);
+        let round = 0, done = false, refRot = 0, cands = [], scan = 0;
+
+        function setup() {
+            const pool = ANG.slice();
+            for (let i = pool.length - 1; i > 0; i--) { const j = api.randInt(0, i); const t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+            const chosen = pool.slice(0, N);
+            refRot = chosen[api.randInt(0, N - 1)];
+            const perRow = Math.min(N, 4);
+            const cw = W / perRow;
+            cands = chosen.map((rot, i) => ({ rot, x: cw * ((i % perRow) + 0.5), y: 156 + Math.floor(i / perRow) * 92, match: rot === refRot }));
+        }
+        setup();
+        api.setDots(rounds);
+
+        function pick(c) {
+            if (done) return;
+            if (c.match) {
+                round++; api.sfx('beep'); api.setDots(rounds, Array.from({ length: rounds }, (_, i) => i < round ? 'done' : ''));
+                if (round >= rounds) { done = true; api.stopTimer(); api.setTag('IDENTIFIED'); setTimeout(() => api.succeed(), 300); return; }
+                setup();
+            } else { api.shake(); done = true; api.stopTimer(); setTimeout(() => api.fail(), 300); }
+        }
+        cvs.addEventListener('click', (e) => {
+            if (done) return;
+            const b = cvs.getBoundingClientRect();
+            const x = (e.clientX - b.left) * (W / b.width), y = (e.clientY - b.top) * (H / b.height);
+            for (const c of cands) if (Math.hypot(x - c.x, y - c.y) < 36) { pick(c); return; }
+        });
+
+        api.setTag('SCANNING');
+        api.startTimer(Math.max(11, 22 - diff * 2), () => { if (!done) { done = true; api.stopTimer(); setTimeout(() => api.fail(), 200); } });
+
+        function print(cx, cy, R, rot, col, glow) {
+            ctx.save(); ctx.translate(cx, cy); ctx.rotate(rot);
+            ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.lineCap = 'round';
+            if (glow) { ctx.shadowColor = col; ctx.shadowBlur = 10; }
+            const gap = 0.55;
+            for (let i = 0; i < 6; i++) { const r = 5 + i * (R - 5) / 6; ctx.beginPath(); ctx.arc(0, 0, r, gap, Math.PI * 2 - gap); ctx.stroke(); }
+            ctx.shadowBlur = 0;
+            ctx.beginPath(); ctx.moveTo(Math.cos(gap) * 5, Math.sin(gap) * 5); ctx.lineTo(R + 4, 0); ctx.stroke();
+            ctx.restore();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '10px monospace'; ctx.textAlign = 'center'; ctx.fillText('REFERENCE', W / 2, 18);
+            ctx.fillStyle = 'rgba(255,255,255,0.04)'; ctx.fillRect(W / 2 - 46, 26, 92, 92);
+            ctx.strokeStyle = acc; ctx.lineWidth = 1; ctx.strokeRect(W / 2 - 46, 26, 92, 92);
+            print(W / 2, 72, 34, refRot, acc, true);
+            scan = (scan + 1.3) % 92; ctx.strokeStyle = 'rgba(0,224,184,0.5)'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(W / 2 - 46, 26 + scan); ctx.lineTo(W / 2 + 46, 26 + scan); ctx.stroke();
+            cands.forEach(c => { ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1; ctx.strokeRect(c.x - 34, c.y - 34, 68, 68); print(c.x, c.y, 26, c.rot, 'rgba(255,255,255,0.72)', false); });
+            if (!done) loop = requestAnimationFrame(draw);
+        }
+        let loop = requestAnimationFrame(draw);
+        return { destroy() { cancelAnimationFrame(loop); } };
+    }
+});
+    </script>
+    <script>MG.register('breathalyzer', {
+    title: 'Breathalyzer',
+    hint: 'Hold SPACE / mouse to blow · keep the flow in the green to log a reading',
+    run(api) {
+        const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
+        const W = 360, H = 280;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        cvs.style.cursor = 'pointer';
+        api.board.appendChild(cvs);
+        const ctx = cvs.getContext('2d');
+
+        const css = getComputedStyle(document.documentElement);
+        const acc = (css.getPropertyValue('--accent') || '#00e0b8').trim();
+        const suc = (css.getPropertyValue('--success') || '#39d98a').trim();
+        const dng = (css.getPropertyValue('--danger') || '#ff3b5c').trim();
+
+        const bandH = Math.max(0.16, 0.34 - diff * 0.03);
+        const lo = 0.48, hi = lo + bandH;
+        const rise = 0.95, drain = 0.85, fillRate = 0.32;
+        let flow = 0, reading = 0, hold = false, done = false, last = performance.now();
+
+        function down(e) { if (e.code === 'Space') { e.preventDefault(); hold = true; } }
+        function up(e) { if (e.code === 'Space') { e.preventDefault(); hold = false; } }
+        document.addEventListener('keydown', down);
+        document.addEventListener('keyup', up);
+        cvs.addEventListener('mousedown', () => hold = true);
+        cvs.addEventListener('mouseup', () => hold = false);
+        cvs.addEventListener('mouseleave', () => hold = false);
+
+        api.setTag('BLOW');
+        api.startTimer(Math.max(16, 26 - diff * 2), () => fail());
+        function clean() { document.removeEventListener('keydown', down); document.removeEventListener('keyup', up); }
+        function fail() { if (done) return; done = true; clean(); api.stopTimer(); api.shake(); setTimeout(() => api.fail(), 200); }
+        function win() { if (done) return; done = true; clean(); api.stopTimer(); api.setTag('READING LOGGED'); setTimeout(() => api.succeed(), 300); }
+
+        function draw() {
+            const now = performance.now(); const dt = Math.min(0.05, (now - last) / 1000); last = now;
+            if (!done) {
+                flow = Math.max(0, Math.min(1, flow + (hold ? rise : -drain) * dt));
+                const inB = flow >= lo && flow <= hi;
+                reading = Math.max(0, Math.min(1, reading + (inB ? fillRate : -fillRate * 0.5) * dt));
+                if (reading >= 1) { win(); return; }
+            }
+            ctx.clearRect(0, 0, W, H);
+            const gx = 90, gw = 54, top = 30, bh = H - 80;
+            ctx.fillStyle = 'rgba(255,255,255,0.07)'; ctx.fillRect(gx, top, gw, bh);
+            ctx.fillStyle = 'rgba(57,217,138,0.18)'; ctx.fillRect(gx, top + bh * (1 - hi), gw, bh * (hi - lo));
+            ctx.strokeStyle = 'rgba(57,217,138,0.5)'; ctx.lineWidth = 1; ctx.strokeRect(gx, top + bh * (1 - hi), gw, bh * (hi - lo));
+            const inB = flow >= lo && flow <= hi;
+            const fy = top + bh * (1 - flow);
+            ctx.fillStyle = inB ? suc : dng; ctx.shadowColor = inB ? suc : dng; ctx.shadowBlur = 12;
+            ctx.fillRect(gx - 4, fy - 3, gw + 8, 6); ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '10px monospace'; ctx.textAlign = 'center'; ctx.fillText('FLOW', gx + gw / 2, H - 38);
+            const dxc = 230;
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 2; ctx.strokeRect(dxc - 36, 60, 72, 120);
+            ctx.fillStyle = inB ? 'rgba(57,217,138,0.12)' : 'rgba(255,255,255,0.03)'; ctx.fillRect(dxc - 36, 60, 72, 120);
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 22px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(Math.round(reading * 100) + '%', dxc, 120); ctx.textBaseline = 'alphabetic';
+            ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(dxc - 36, 196, 72, 10);
+            ctx.fillStyle = suc; ctx.fillRect(dxc - 36, 196, 72 * reading, 10);
+            ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '10px monospace'; ctx.fillText('READING', dxc, 224);
+            if (!done) loop = requestAnimationFrame(draw);
+        }
+        let loop = requestAnimationFrame(draw);
+        return { destroy() { cancelAnimationFrame(loop); clean(); } };
+    }
+});
+    </script>
+    <script>MG.register('titration', {
+    title: 'Titration',
+    hint: 'Hold to pour · stop in the green band · don’t overshoot',
+    run(api) {
+        const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
+        const W = 360, H = 300;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        cvs.style.cursor = 'pointer';
+        api.board.appendChild(cvs);
+        const ctx = cvs.getContext('2d');
+
+        const css = getComputedStyle(document.documentElement);
+        const acc = (css.getPropertyValue('--accent') || '#00e0b8').trim();
+        const suc = (css.getPropertyValue('--success') || '#39d98a').trim();
+        const dng = (css.getPropertyValue('--danger') || '#ff3b5c').trim();
+
+        const rounds = 2 + Math.floor(diff / 2);
+        const bandH = Math.max(0.05, 0.13 - diff * 0.012);
+        const pourRate = 0.34 + diff * 0.06;
+        let round = 0, level = 0, lo = 0, hi = 0, pour = false, done = false, last = performance.now();
+
+        function newTarget() { lo = 0.45 + Math.random() * (0.92 - bandH - 0.45); hi = lo + bandH; level = 0; }
+        newTarget();
+        api.setDots(rounds);
+
+        function release() {
+            if (done || !pour) return; pour = false;
+            if (level >= lo && level <= hi) {
+                round++; api.sfx('good'); api.setDots(rounds, Array.from({ length: rounds }, (_, i) => i < round ? 'done' : ''));
+                if (round >= rounds) { done = true; api.stopTimer(); api.setTag('TITRATED'); setTimeout(() => api.succeed(), 300); return; }
+                newTarget();
+            } else if (level > hi) { api.shake(); done = true; api.stopTimer(); api.setTag('OVERSHOT'); setTimeout(() => api.fail(), 300); }
+        }
+        function down(e) { if (e.code === 'Space') { e.preventDefault(); pour = true; } }
+        function up(e) { if (e.code === 'Space') { e.preventDefault(); release(); } }
+        document.addEventListener('keydown', down);
+        document.addEventListener('keyup', up);
+        cvs.addEventListener('mousedown', () => pour = true);
+        cvs.addEventListener('mouseup', release);
+        cvs.addEventListener('mouseleave', release);
+
+        api.setTag('POURING');
+        api.startTimer(Math.max(16, 28 - diff * 2), () => { if (!done) { done = true; api.stopTimer(); document.removeEventListener('keydown', down); document.removeEventListener('keyup', up); setTimeout(() => api.fail(), 200); } });
+
+        function draw() {
+            const now = performance.now(); const dt = Math.min(0.05, (now - last) / 1000); last = now;
+            if (!done && pour) { level = Math.min(1, level + pourRate * dt); if (level > hi + 0.001) release(); }
+            ctx.clearRect(0, 0, W, H);
+            const bx = W / 2;
+            ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 2; ctx.strokeRect(bx - 8, 14, 16, 40);
+            if (pour) { ctx.fillStyle = acc; ctx.beginPath(); ctx.arc(bx, 60 + (performance.now() / 60 % 14), 2.5, 0, Math.PI * 2); ctx.fill(); }
+            const beX = bx - 70, beY = 84, beW = 140, beH = H - 120;
+            ctx.fillStyle = (level >= lo && level <= hi) ? 'rgba(57,217,138,0.6)' : (level > hi ? 'rgba(255,59,92,0.6)' : 'rgba(0,224,184,0.5)');
+            ctx.fillRect(beX, beY + beH * (1 - level), beW, beH * level);
+            ctx.fillStyle = 'rgba(57,217,138,0.18)'; ctx.fillRect(beX, beY + beH * (1 - hi), beW, beH * (hi - lo));
+            ctx.strokeStyle = suc; ctx.lineWidth = 1.5; ctx.strokeRect(beX, beY + beH * (1 - hi), beW, beH * (hi - lo));
+            ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(beX, beY); ctx.lineTo(beX, beY + beH); ctx.lineTo(beX + beW, beY + beH); ctx.lineTo(beX + beW, beY); ctx.stroke();
+            ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.font = '10px monospace'; ctx.textAlign = 'center'; ctx.fillText('stop in the green band', bx, H - 14);
+            if (!done) loop = requestAnimationFrame(draw);
+        }
+        let loop = requestAnimationFrame(draw);
+        return { destroy() { cancelAnimationFrame(loop); document.removeEventListener('keydown', down); document.removeEventListener('keyup', up); } };
+    }
+});
+    </script>
+    <script>MG.register('pillpress', {
+    title: 'Pill Press',
+    hint: 'SPACE / click when the press is fully down on the die',
+    run(api) {
+        const diff = Math.max(1, Math.min(5, api.cfg.difficulty || 2));
+        const W = 360, H = 300;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        cvs.style.cursor = 'pointer';
+        api.board.appendChild(cvs);
+        const ctx = cvs.getContext('2d');
+
+        const css = getComputedStyle(document.documentElement);
+        const acc = (css.getPropertyValue('--accent') || '#00e0b8').trim();
+        const suc = (css.getPropertyValue('--success') || '#39d98a').trim();
+        const dng = (css.getPropertyValue('--danger') || '#ff3b5c').trim();
+
+        const need = 4 + diff;
+        const maxWrong = Math.max(2, 5 - diff);
+        const window = Math.max(0.1, 0.24 - diff * 0.025);
+        let phase = 0, spd = 0.03 + diff * 0.006, made = 0, wrong = 0, done = false, flash = 0;
+
+        api.setDots(need);
+
+        function press() {
+            if (done) return;
+            const pos = (1 - Math.cos(phase)) / 2;
+            if (pos >= 1 - window) {
+                made++; api.sfx('latch'); flash = 6; spd += 0.002;
+                api.setDots(need, Array.from({ length: need }, (_, i) => i < made ? 'done' : ''));
+                if (made >= need) { done = true; api.stopTimer(); api.setTag('PRESSED'); setTimeout(() => api.succeed(), 300); }
+            } else { wrong++; api.shake(); if (wrong >= maxWrong) { done = true; api.stopTimer(); setTimeout(() => api.fail(), 300); } }
+        }
+        function key(e) { if (e.code === 'Space') { e.preventDefault(); press(); } }
+        document.addEventListener('keydown', key);
+        cvs.addEventListener('click', press);
+
+        api.setTag('PRESSING');
+        api.startTimer(Math.max(16, 28 - diff * 2), () => { if (!done) { done = true; api.stopTimer(); document.removeEventListener('keydown', key); setTimeout(() => api.fail(), 200); } });
+
+        function draw() {
+            if (!done) phase += spd;
+            const pos = (1 - Math.cos(phase)) / 2;
+            ctx.clearRect(0, 0, W, H);
+            const cx = W / 2, topY = 40, travel = 120, dieY = topY + travel + 26;
+            ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 6;
+            ctx.beginPath(); ctx.moveTo(cx - 70, 30); ctx.lineTo(cx - 70, dieY + 20); ctx.moveTo(cx + 70, 30); ctx.lineTo(cx + 70, dieY + 20); ctx.stroke();
+            const inWin = pos >= 1 - window;
+            ctx.fillStyle = 'rgba(57,217,138,0.15)'; ctx.fillRect(cx - 46, dieY - 6, 92, 14);
+            ctx.strokeStyle = inWin ? suc : 'rgba(57,217,138,0.5)'; ctx.lineWidth = 2; ctx.strokeRect(cx - 46, dieY - 6, 92, 14);
+            const hy = topY + travel * pos;
+            ctx.fillStyle = flash > 0 ? suc : acc; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = inWin ? 16 : 6;
+            ctx.fillRect(cx - 40, hy - 30, 80, 30); ctx.shadowBlur = 0;
+            if (flash > 0) flash--;
+            for (let i = 0; i < need; i++) { ctx.fillStyle = i < made ? suc : 'rgba(255,255,255,0.12)'; ctx.beginPath(); ctx.ellipse(cx - (need - 1) * 9 + i * 18, dieY + 40, 7, 4, 0, 0, Math.PI * 2); ctx.fill(); }
+            for (let i = 0; i < maxWrong; i++) { ctx.fillStyle = i < wrong ? dng : 'rgba(255,255,255,0.15)'; ctx.beginPath(); ctx.arc(20 + i * 14, 24, 4, 0, Math.PI * 2); ctx.fill(); }
+            if (!done) loop = requestAnimationFrame(draw);
+        }
+        let loop = requestAnimationFrame(draw);
+        return { destroy() { cancelAnimationFrame(loop); document.removeEventListener('keydown', key); } };
+    }
+});
+    </script>
     <script>
         window.GetParentResourceName = function () { return 'preview'; };
         const _origFetch = window.fetch;
@@ -5067,7 +5736,7 @@
                 return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
             return _origFetch.apply(this, arguments);
         };
-        const CATS = [['ESSENTIALS', '#39d98a', ["skillcheck", "lockpick", "keypad", "quicktime", "mash", "reaction", "stacker", "targets"]], ['CORE', '#00e0b8', ["livewire", "flatline", "deadcalm", "ghostsignal", "steadydose", "cuttheright", "vaultspin", "bluff", "decrypt", "gaslight"]], ['ADVANCED', '#ff8a00', ["overflow", "breachmatrix", "daemonrun", "pulse", "hottrace", "cascade"]], ['AAA-INSPIRED', '#c06bff', ["resonance", "intrusion", "override", "animus", "eaglevision"]], ['JOBS', '#ffd23f', ["fishing", "mining", "cooking", "welding", "harvest", "drilling", "locksmith", "hotwire", "crafting", "lugnuts", "paintspray", "crane"]], ['CRIME', '#ff3b5c', ["tripwire", "pickpocket", "getaway"]], ['MEDICAL', '#36d1dc', ["suture", "bonepin", "vitals"]], ['HEIST', '#ff6b35', ["thermite", "lasergrid", "vaultdrill", "jammer", "dataheist"]]];
+        const CATS = [['ESSENTIALS', '#39d98a', ["skillcheck", "lockpick", "keypad", "quicktime", "mash", "reaction", "stacker", "targets"]], ['CORE', '#00e0b8', ["livewire", "flatline", "deadcalm", "ghostsignal", "steadydose", "cuttheright", "vaultspin", "bluff", "decrypt", "gaslight"]], ['ADVANCED', '#ff8a00', ["overflow", "breachmatrix", "daemonrun", "pulse", "hottrace", "cascade"]], ['AAA-INSPIRED', '#c06bff', ["resonance", "intrusion", "override", "animus", "eaglevision"]], ['JOBS', '#ffd23f', ["fishing", "mining", "cooking", "welding", "harvest", "drilling", "locksmith", "hotwire", "crafting", "lugnuts", "paintspray", "crane"]], ['MECHANIC', '#ff8a3d', ["partsort", "toolbox", "packing", "beltsort"]], ['CRIME', '#ff3b5c', ["tripwire", "pickpocket", "getaway"]], ['MEDICAL', '#36d1dc', ["suture", "bonepin", "vitals"]], ['POLICE', '#4a8fff', ["fingerprint", "breathalyzer"]], ['CHEMISTRY', '#a6ff4d', ["titration", "pillpress"]], ['HEIST', '#ff6b35', ["thermite", "lasergrid", "vaultdrill", "jammer", "dataheist"]]];
         let sndOn = true;
         function buildMenu() {
             let m = document.getElementById('previewMenu');
@@ -5085,7 +5754,7 @@
             CATS.forEach((c, ci) => { cats += '<div style="font-size:10px;letter-spacing:2px;color:' + c[1] + ';margin:' + (ci ? '12px' : '0') + ' 0 6px;">' + c[0] + '</div><div id="cat' + ci + '" style="display:grid;grid-template-columns:1fr 1fr;gap:7px;"></div>'; });
             m.innerHTML = '<div style="background:#0a0e14;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:26px;width:600px;box-shadow:0 0 60px -20px #00e0b8;margin:auto;">'
                 + '<div style="font-size:11px;letter-spacing:4px;color:#00e0b8;">AY-EYE MINIGAMES</div>'
-                + '<div style="font-size:23px;font-weight:700;color:#e8edf2;margin:4px 0 14px;">Browser Preview · 52 games</div>' + tag
+                + '<div style="font-size:23px;font-weight:700;color:#e8edf2;margin:4px 0 14px;">Browser Preview · 60 games</div>' + tag
                 + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="color:#6b7686;font-size:13px;">Difficulty</span>'
                 + '<input id="pvDiff" type="range" min="1" max="5" value="2" style="flex:1;"><span id="pvDiffV" style="color:#00e0b8;width:14px;">2</span></div>'
                 + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;"><span style="color:#6b7686;font-size:13px;">Sound</span>'

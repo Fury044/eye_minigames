@@ -144,11 +144,14 @@ if Config.EnableTestCommands then
         advanced   = { 'overflow', 'breachmatrix', 'daemonrun', 'pulse', 'hottrace', 'cascade' },
         aaa        = { 'resonance', 'intrusion', 'override', 'animus', 'eaglevision' },
         jobs       = { 'fishing', 'mining', 'cooking', 'welding', 'harvest', 'drilling', 'locksmith', 'hotwire', 'crafting', 'lugnuts', 'paintspray', 'crane' },
+        mechanic   = { 'partsort', 'toolbox', 'packing', 'beltsort' },
         crime      = { 'tripwire', 'pickpocket', 'getaway' },
         medical    = { 'suture', 'bonepin', 'vitals' },
+        police     = { 'fingerprint', 'breathalyzer' },
+        chemistry  = { 'titration', 'pillpress' },
         heist      = { 'thermite', 'lasergrid', 'vaultdrill', 'jammer', 'dataheist' }
     }
-    local order = { 'essentials', 'core', 'advanced', 'aaa', 'jobs', 'crime', 'medical', 'heist' }
+    local order = { 'essentials', 'core', 'advanced', 'aaa', 'jobs', 'mechanic', 'crime', 'medical', 'police', 'chemistry', 'heist' }
 
     local function allIds()
         local t = {}
