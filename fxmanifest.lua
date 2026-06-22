@@ -2,8 +2,8 @@ fx_version 'cerulean'
 game 'gta5'
 
 author 'Aria'
-description 'Ay-eye Minigames — a standalone, framework-agnostic pack of 60 cinematic skill-check minigames with a clean export API'
-version '2.0.0'
+description 'Ay-eye Minigames — a standalone, framework-agnostic pack of 70 cinematic skill-check minigames with a clean export API'
+version '2.3.0'
 
 lua54 'yes'
 
@@ -84,5 +84,15 @@ files {
     'html/games/breathalyzer.js',
     'html/games/titration.js',
     'html/games/pillpress.js',
+    'html/games/lightsout.js',
+    'html/games/slidepuzzle.js',
+    'html/games/parry.js',
+    'html/games/constellation.js',
+    'html/games/archery.js',
+    'html/games/forge.js',
+    'html/games/diving.js',
+    'html/games/cashcount.js',
+    'html/games/counterfeit.js',
+    'html/games/chopshop.js',
     'html/boot.js'
 }

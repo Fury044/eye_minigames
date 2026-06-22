@@ -1,13 +1,13 @@
 # Ay-eye Minigames
 
-A **standalone, framework-agnostic** pack of 60 cinematic skill-check minigames
+A **standalone, framework-agnostic** pack of 70 cinematic skill-check minigames
 for FiveM, with one clean export API. No ESX, QBCore, QBox, or ox_lib required.
 Drop it in, call it from any script, get a `true`/`false` back.
 
 # [Preview](https://eye-minigames.vercel.app/) 
 ---
 
-## The games (60 total)
+## The games (70 total)
 
 ### Essentials (8 — the everyday workhorses, fit any script)
 
@@ -37,7 +37,7 @@ Drop it in, call it from any script, get a `true`/`false` back.
 | `decrypt` | Decrypt | type streaming code tokens | hacking, terminals |
 | `gaslight` | Gaslight | flash-memory recall | witness, recon, observation |
 
-### Advanced (6 — inspired by well-known game mechanics)
+### Advanced (8 — inspired by well-known game mechanics)
 
 | id | name | mechanic | inspired by | good for |
 |----|------|----------|-------------|----------|
@@ -47,8 +47,10 @@ Drop it in, call it from any script, get a `true`/`false` back.
 | `pulse` | Pulse | 4-lane rhythm note hitting (D F J K) | Guitar Hero / rhythm | DJ, music, timing-heavy jobs |
 | `hottrace` | Hot Trace | drag a probe through a corridor, no walls | Operation / wire-loop | surgery, delicate wiring, defusal |
 | `cascade` | Cascade | escalating Simon-says pattern memory | Simon / Bop It | keypads, memory locks |
+| `lightsout` | Lights Out | flip cells (and neighbours) until every light is off | Lights Out | logic locks, fuse boxes, terminals |
+| `slidepuzzle` | Slide Puzzle | slide the scrambled tiles back into 1..N order | 15-puzzle | locks, repairs, decryption, terminals |
 
-### AAA-Inspired (5 — premium signature mechanics)
+### AAA-Inspired (8 — premium signature mechanics)
 
 | id | name | mechanic | inspired by | good for |
 |----|------|----------|-------------|----------|
@@ -57,8 +59,11 @@ Drop it in, call it from any script, get a `true`/`false` back.
 | `override` | Override | lock spinning concentric rings at the top notch before corruption fills | Horizon Zero Dawn override | machine/drone takeover, control hacks |
 | `animus` | Animus | rotate concentric rings to align all key segments to one spoke | Assassin's Creed animus/glyph | ancient locks, sync points, relics |
 | `eaglevision` | Eagle Vision | memorize a target signature, then click every match among decoys | AC eagle vision / spider-sense | recon, target ID, surveillance |
+| `parry` | Deflect | parry each incoming strike with the right arrow inside the timing ring | Sekiro / soulslike | melee duels, struggles, defence |
+| `constellation` | Stargazing | connect the numbered stars in order to trace the constellation | AC / Ghost of Tsushima | rituals, recon, observation, lore |
+| `archery` | Longshot | drag from the bow toward the target & arc the shot onto it (trajectory preview) | Horizon / Tomb Raider | hunting, archery, ranged skill checks |
 
-### Jobs (12 — job-specific)
+### Jobs (14 — job-specific)
 
 | id | name | mechanic | good for |
 |----|------|----------|----------|
@@ -74,6 +79,8 @@ Drop it in, call it from any script, get a `true`/`false` back.
 | `lugnuts` | Lug Nuts | torque each wheel nut in star order — stop the needle in the green | mechanic, tyre shop, repairs |
 | `paintspray` | Paint Booth | spray the panel to even coverage without over-soaking (drips) | bodyshop, resprays, detailing |
 | `crane` | Cargo Crane | lead the pendulum swing and drop crates onto the truck | docks, warehouse, loading |
+| `forge` | Blacksmith | strike the metal while it glows in the green heat window | smithing, weapon/tool crafting, metalwork |
+| `diving` | Salvage Dive | grab the loot, surface to breathe before air runs out | diving, salvage, smuggling, search & rescue |
 
 ### Mechanic (4 — sorting & moving things around)
 
@@ -84,13 +91,16 @@ Drop it in, call it from any script, get a `true`/`false` back.
 | `packing` | Crate Packing | drag every part into the crate so they all fit (Tetris-style) | warehouse, shipping, loadouts, storage |
 | `beltsort` | Quality Control | pull the cracked parts off the conveyor, let good ones pass | factory, assembly line, inspection, recycling |
 
-### Crime & Heist (3)
+### Crime (6 — illegal jobs)
 
 | id | name | mechanic | good for |
 |----|------|----------|----------|
 | `tripwire` | Tripwire | weave past sweeping lasers to the exit — one touch = caught | infiltration, heists, security rooms |
 | `pickpocket` | Pickpocket | hold to lift, release before the mark glances at you | theft, lifting, stealth |
 | `getaway` | Getaway | swap lanes to dodge oncoming traffic and survive the run | chases, getaway driver, street racing |
+| `cashcount` | Count The Take | click bills to hit the exact amount (undo to fix overcounts) | robbery loot, drug deals, laundering |
+| `counterfeit` | Counterfeit | drag the plate onto the guides and hold it aligned to print | fake bills, forged documents |
+| `chopshop` | Chop Shop | hold on each car part to unbolt it before the heat maxes out | stolen car stripping, parts fencing |
 
 ### Medical & Rescue (3)
 

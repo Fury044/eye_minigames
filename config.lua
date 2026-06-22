@@ -31,6 +31,8 @@ Config.Defaults = {
     pulse        = { difficulty = 2 },
     hottrace     = { difficulty = 2 },
     cascade      = { difficulty = 2 },
+    lightsout    = { difficulty = 2 },
+    slidepuzzle  = { difficulty = 2 },
 
     -- AAA-inspired pack
     resonance    = { difficulty = 2 },
@@ -38,6 +40,9 @@ Config.Defaults = {
     override     = { difficulty = 2 },
     animus       = { difficulty = 2 },
     eaglevision  = { difficulty = 2 },
+    parry        = { difficulty = 2 },
+    constellation = { difficulty = 2 },
+    archery      = { difficulty = 2 },
 
     -- essentials (universal, fit any script)
     skillcheck   = { difficulty = 2, rounds = 3 },
@@ -59,11 +64,16 @@ Config.Defaults = {
     locksmith    = { difficulty = 2 },
     hotwire      = { difficulty = 2 },
     crafting     = { difficulty = 2 },
+    forge        = { difficulty = 2 },
+    diving       = { difficulty = 2 },
 
     -- crime & heist
     tripwire     = { difficulty = 2 },
     pickpocket   = { difficulty = 2 },
     getaway      = { difficulty = 2 },
+    cashcount    = { difficulty = 2 },
+    counterfeit  = { difficulty = 2 },
+    chopshop     = { difficulty = 2 },
 
     -- jobs & trades (extended)
     lugnuts      = { difficulty = 2 },
